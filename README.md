@@ -118,8 +118,8 @@ vim.cmd.colorscheme("tokyonight")
 
 如有问题或建议，请通过以下方式联系：
 
-- GitHub Issues: [问题反馈](https://github.com/your-username/arkvim/issues)
-- 电子邮件: your-email@example.com
+- GitHub Issues: [问题反馈](qq号：303096049)
+- 电子邮件: 303096049@qq.com
 
 ---
 
