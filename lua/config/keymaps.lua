@@ -32,18 +32,20 @@ map("n", "<leader>r", function()
 end, { desc = "在浮动终端中编译运行 C++" })
 
 -- 在右侧终端中打开 opencode
-map("n", "<leader>ao", function()
+map("n", "<leader>to", function()
+  local root = vim.fs.root(0, ".git") or vim.fn.getcwd()
   Snacks.terminal("opencode", {
+    cwd = root,
     win = {
       position = "right",
-      width = 0.3,
+      width = 0.25,
     },
     interactive = true,
   })
 end, { desc = "在右侧终端中打开 opencode" })
 
 -- 在浮动终端中打开 opencode
-map("n", "<leader>aO", function()
+map("n", "<leader>tO", function()
   Snacks.terminal("opencode", {
     win = {
       position = "float",
