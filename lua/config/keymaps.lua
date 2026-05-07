@@ -38,11 +38,42 @@ map("n", "<leader>to", function()
     cwd = root,
     win = {
       position = "right",
-      width = 0.25,
+      width = 0.22,
     },
     interactive = true,
   })
 end, { desc = "在右侧终端中打开 opencode" })
+
+-- 在下方打开单个终端
+map("n", "<leader>ftc", function()
+  Snacks.terminal(nil, {
+    cwd = LazyVim.root(),
+    win = {
+      position = "bottom",
+      height = 0.25,
+    },
+  })
+end, { desc = "下方终端" })
+
+-- 下方左右：终端 + cava
+map("n", "<leader>ftv", function()
+  local root = LazyVim.root()
+  Snacks.terminal(nil, {
+    cwd = root,
+    win = {
+      position = "bottom",
+      height = 0.25,
+    },
+  })
+  vim.cmd("vsplit")
+  vim.cmd("wincmd l")
+  vim.cmd("enew")
+  local chan = vim.fn.termopen(vim.o.shell, { cwd = root })
+  vim.fn.chansend(chan, "cava\n")
+  vim.cmd("stopinsert")
+  vim.api.nvim_win_set_width(0, math.floor(vim.api.nvim_win_get_width(0) * 0.8))
+  vim.cmd("wincmd h")
+end, { desc = "下方终端 + cava" })
 
 -- 在浮动终端中打开 opencode
 map("n", "<leader>tO", function()
@@ -55,3 +86,9 @@ map("n", "<leader>tO", function()
     interactive = true,
   })
 end, { desc = "在浮动终端中打开 opencode" })
+
+-- 终端模式下 Ctrl+HJKL 跳转窗口
+map("t", "<C-h>", "<C-\\><C-n><C-w>h", { desc = "终端左移" })
+map("t", "<C-j>", "<C-\\><C-n><C-w>j", { desc = "终端下移" })
+map("t", "<C-k>", "<C-\\><C-n><C-w>k", { desc = "终端上移" })
+map("t", "<C-l>", "<C-\\><C-n><C-w>l", { desc = "终端右移" })
