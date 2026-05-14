@@ -1,0 +1,1 @@
+/home/a/.config/nvim/art_mon.txt
