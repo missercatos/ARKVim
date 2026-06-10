@@ -95,6 +95,21 @@ return {
         hl["@keyword.return.cpp"] = { fg = colors.yellow }
         hl["Delimiter"] = { fg = "#8b949e" }
         hl["Special"] = { fg = colors.orange }
+        hl["NeoTreeDirectoryName"] = { fg = "#e6edf3" }
+        hl["NeoTreeDirectoryIcon"] = { fg = "#e6edf3" }
+        hl["NeoTreeDotfile"] = { fg = "#d4d8de" }
+        hl["NeoTreeDimText"] = { fg = "#d4d8de" }
+        hl["NeoTreeFileName"] = { fg = "#e6edf3" }
+        hl["NeoTreeGitIgnored"] = { fg = "#c8ccd4" }
+        hl["SnacksExplorerDimmed"] = { fg = "#c8ccd4" }
+        hl["SnacksExplorerDirectory"] = { fg = "#e6edf3" }
+        hl["SnacksExplorerFile"] = { fg = "#d4d8de" }
+        hl["SnacksExplorerGitIgnored"] = { fg = "#b0b8c0" }
+        hl["SnacksPickerDirectory"] = { fg = "#e6edf3" }
+        hl["SnacksPickerFile"] = { fg = "#d4d8de" }
+        hl["SnacksPickerDir"] = { fg = "#b0b8c0" }
+        hl["SnacksPickerPathHidden"] = { fg = "#c8ccd4" }
+        hl["SnacksPickerPathIgnored"] = { fg = "#b0b8c0" }
       end,
     },
   },
