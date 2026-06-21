@@ -1,1 +1,1 @@
-/home/a/.config/nvim/art_amya.txt
+/home/a/.config/nvim/art_mon.txt
