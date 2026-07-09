@@ -128,7 +128,7 @@ vim.cmd.colorscheme("tokyonight")
 如有问题或建议，请通过以下方式联系：
 
 - GitHub Issues: [问题反馈](qq号：303096049)
-- 电子邮件: missercatos@misser.top
+- 电子邮件: misser_catos@zohomail.com
 
 ---
 
