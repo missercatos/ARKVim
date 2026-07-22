@@ -15,7 +15,18 @@ local function detect_shell()
     or vim.o.shell
 end
 
+local function mac_temp_script(lines)
+  local tmp = vim.fn.tempname() .. ".command"
+  vim.fn.writefile(lines, tmp)
+  vim.fn.setfperm(tmp, "755")
+  vim.fn.jobstart({ "open", tmp }, { detach = true })
+end
+
 local function open_external_terminal(dir)
+  if vim.fn.has("mac") == 1 then
+    mac_temp_script({ "cd " .. vim.fn.shellescape(dir), "exec " .. detect_shell() })
+    return
+  end
   local terms = {
     { "gnome-terminal", "--working-directory=" .. dir },
     { "konsole", "--workdir", dir },
@@ -45,6 +56,10 @@ local function open_external_terminal(dir)
 end
 
 local function run_in_terminal(cmd)
+  if vim.fn.has("mac") == 1 then
+    mac_temp_script({ "#!/bin/bash", cmd })
+    return
+  end
   local shell = detect_shell()
   local terms = {
     { "gnome-terminal", "--", shell, "-c", cmd },
