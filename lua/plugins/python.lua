@@ -1,15 +1,16 @@
+local enabled = vim.fn.executable("python3") == 1
+
 return {
-  -- Treesitter
   {
     "nvim-treesitter/nvim-treesitter",
+    enabled = enabled,
     opts = function(_, opts)
       vim.list_extend(opts.ensure_installed, { "python" })
     end,
   },
-
-  -- Mason: install Python tools
   {
     "mason-org/mason.nvim",
+    enabled = enabled,
     opts = function(_, opts)
       vim.list_extend(opts.ensure_installed, {
         "basedpyright",
@@ -19,10 +20,9 @@ return {
       })
     end,
   },
-
-  -- LSP: basedpyright
   {
     "neovim/nvim-lspconfig",
+    enabled = enabled,
     opts = {
       servers = {
         basedpyright = {
@@ -40,10 +40,9 @@ return {
       },
     },
   },
-
-  -- Conform: format with ruff on save
   {
     "stevearc/conform.nvim",
+    enabled = enabled,
     optional = true,
     opts = {
       formatters_by_ft = {
@@ -56,10 +55,9 @@ return {
       end,
     },
   },
-
-  -- nvim-lint
   {
     "mfussenegger/nvim-lint",
+    enabled = enabled,
     optional = true,
     opts = {
       linters_by_ft = {
@@ -67,12 +65,11 @@ return {
       },
     },
   },
-
-  -- DAP: debugpy
   {
     "mfussenegger/nvim-dap",
+    enabled = enabled,
     optional = true,
-    opts = function()
+    config = function()
       local dap = require("dap")
       dap.configurations.python = {
         {

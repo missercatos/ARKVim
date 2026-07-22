@@ -1,15 +1,9 @@
+local enabled = vim.fn.executable("lua") == 1
+
 return {
   {
-    "S1M0N38/love2d.nvim",
-    cmd = "LoveRun",
-    keys = {
-      { "<leader>vl", "<cmd>LoveRun<cr>", desc = "运行 Love2D 项目" },
-      { "<leader>vs", "<cmd>LoveStop<cr>", desc = "停止 Love2D" },
-      { "<leader>vr", "<cmd>LoveRestart<cr>", desc = "重启 Love2D" },
-    },
-  },
-  {
     "neovim/nvim-lspconfig",
+    enabled = enabled,
     opts = {
       servers = {
         lua_ls = {
@@ -19,16 +13,9 @@ return {
                 version = "LuaJIT",
               },
               diagnostics = {
-                globals = {
-                  "love",
-                  "rgba",
-                },
+                globals = { "vim" },
               },
               workspace = {
-                library = {
-                  "/usr/share/love",
-                  "${3rd}/love2d/library",
-                },
                 checkThirdParty = false,
               },
               telemetry = {
@@ -42,6 +29,7 @@ return {
   },
   {
     "stevearc/conform.nvim",
+    enabled = enabled,
     optional = true,
     opts = {
       formatters_by_ft = {
@@ -51,6 +39,7 @@ return {
   },
   {
     "mfussenegger/nvim-lint",
+    enabled = enabled,
     optional = true,
     opts = {
       linters_by_ft = {

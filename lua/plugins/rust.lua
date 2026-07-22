@@ -1,6 +1,9 @@
+local enabled = vim.fn.executable("rustc") == 1
+
 return {
   {
     "mason-org/mason.nvim",
+    enabled = enabled,
     opts = function(_, opts)
       vim.list_extend(opts.ensure_installed, {
         "rust-analyzer",
@@ -8,18 +11,18 @@ return {
       })
     end,
   },
-
   {
     "nvim-treesitter/nvim-treesitter",
+    enabled = enabled,
     opts = function(_, opts)
       vim.list_extend(opts.ensure_installed, {
         "rust",
       })
     end,
   },
-
   {
     "neovim/nvim-lspconfig",
+    enabled = enabled,
     opts = {
       servers = {
         rust_analyzer = {
@@ -48,20 +51,20 @@ return {
       },
     },
   },
-
   {
     "stevearc/conform.nvim",
+    enabled = enabled,
     opts = {
       formatters_by_ft = {
         rust = { "rustfmt" },
       },
     },
   },
-
   {
     "mfussenegger/nvim-dap",
+    enabled = enabled,
     optional = true,
-    opts = function()
+    config = function()
       local dap = require("dap")
       dap.adapters.codelldb = {
         type = "server",
