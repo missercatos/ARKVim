@@ -1,4 +1,4 @@
-local enabled = vim.fn.executable("java") == 1
+local enabled = vim.fn.executable("go") == 1
 
 return {
   {
@@ -7,10 +7,10 @@ return {
     optional = true,
     opts = {
       formatters_by_ft = {
-        java = { "google-java-format" },
+        go = { "goimports", "gofumpt" },
       },
       format_on_save = function(bufnr)
-        if vim.bo[bufnr].filetype == "java" then
+        if vim.bo[bufnr].filetype == "go" then
           return { timeout_ms = 5000, lsp_fallback = true }
         end
       end,
@@ -22,18 +22,8 @@ return {
     optional = true,
     opts = {
       linters_by_ft = {
-        java = { "checkstyle" },
+        go = { "golangcilint" },
       },
     },
-  },
-  {
-    "mason-org/mason.nvim",
-    enabled = enabled,
-    opts = function(_, opts)
-      vim.list_extend(opts.ensure_installed, {
-        "google-java-format",
-        "checkstyle",
-      })
-    end,
   },
 }

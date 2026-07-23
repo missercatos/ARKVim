@@ -99,85 +99,105 @@ map("n", "<leader>ft", function()
       height = 0.25,
     },
   })
-end, { desc = "下方终端" })
+end, { desc = "Terminal below" })
 
--- 外部终端（打开新窗口，自动检测终端模拟器）
+-- External terminal (auto-detect)
 map("n", "<leader>fT", function()
   open_external_terminal(vim.fn.expand("%:p:h"))
-end, { desc = "外部终端" })
+end, { desc = "Terminal (external)" })
 
--- 编译并运行（外部终端）
-map("n", "<leader>k", function()
-  local file = vim.fn.expand("%:p")
-  local dir = vim.fn.expand("%:p:h")
+local function compile_cmd(file, dir)
   local base = vim.fn.expand("%:t:r")
   local ext = string.lower(vim.fn.expand("%:e"))
-
-  local cmd
 
   if ext == "c" then
     local cc = vim.fn.executable("gcc") == 1 and "gcc"
       or vim.fn.executable("clang") == 1 and "clang"
     if cc then
-      cmd = string.format("%s -Wall -o %s %s && ./%s", cc,
+      return string.format("%s -Wall -o %s %s && ./%s", cc,
         vim.fn.shellescape(base), vim.fn.shellescape(file), vim.fn.shellescape(base))
-    else
-      cmd = "echo '错误: 未找到 C 编译器 (gcc/clang)'"
     end
-  elseif ext == "cpp" or ext == "cc" or ext == "cxx" then
+    return "echo '错误: 未找到 C 编译器 (gcc/clang)'"
+  end
+  if ext == "cpp" or ext == "cc" or ext == "cxx" then
     local cpp = vim.fn.executable("g++") == 1 and "g++"
       or vim.fn.executable("clang++") == 1 and "clang++"
     if cpp then
-      cmd = string.format("%s -std=c++17 -Wall -o %s %s && ./%s", cpp,
+      return string.format("%s -std=c++17 -Wall -o %s %s && ./%s", cpp,
         vim.fn.shellescape(base), vim.fn.shellescape(file), vim.fn.shellescape(base))
-    else
-      cmd = "echo '错误: 未找到 C++ 编译器 (g++/clang++)'"
     end
-  elseif ext == "java" then
-    if vim.fn.executable("javac") == 1 then
-      cmd = string.format("javac %s && java -cp %s %s",
-        vim.fn.shellescape(file), vim.fn.shellescape(dir), vim.fn.shellescape(base))
-    else
-      cmd = "echo '错误: 未找到 Java 编译器 (javac)'"
-    end
-  elseif ext == "rs" then
-    if vim.fn.executable("rustc") == 1 then
-      cmd = string.format("rustc %s -o %s && ./%s",
-        vim.fn.shellescape(file), vim.fn.shellescape(base), vim.fn.shellescape(base))
-    else
-      cmd = "echo '错误: 未找到 Rust 编译器 (rustc)'"
-    end
-  elseif ext == "go" then
-    if vim.fn.executable("go") == 1 then
-      cmd = string.format("go run %s", vim.fn.shellescape(file))
-    else
-      cmd = "echo '错误: 未找到 Go 编译器 (go)'"
-    end
-  elseif ext == "zig" then
-    if vim.fn.executable("zig") == 1 then
-      cmd = string.format("zig run %s", vim.fn.shellescape(file))
-    else
-      cmd = "echo '错误: 未找到 Zig 编译器 (zig)'"
-    end
-  elseif ext == "cs" then
-    if vim.fn.executable("mcs") == 1 then
-      cmd = string.format("mcs %s && mono %s.exe",
-        vim.fn.shellescape(file), vim.fn.shellescape(base))
-    else
-      cmd = "echo '错误: 未找到 C# 编译器 (mcs)'"
-    end
-  else
-    cmd = "echo '不支持编译该文件类型: " .. ext .. "'"
+    return "echo '错误: 未找到 C++ 编译器 (g++/clang++)'"
   end
+  if ext == "java" then
+    if vim.fn.executable("javac") == 1 then
+      return string.format("javac %s && java -cp %s %s",
+        vim.fn.shellescape(file), vim.fn.shellescape(dir), vim.fn.shellescape(base))
+    end
+    return "echo '错误: 未找到 Java 编译器 (javac)'"
+  end
+  if ext == "rs" then
+    if vim.fn.executable("rustc") == 1 then
+      return string.format("rustc %s -o %s && ./%s",
+        vim.fn.shellescape(file), vim.fn.shellescape(base), vim.fn.shellescape(base))
+    end
+    return "echo '错误: 未找到 Rust 编译器 (rustc)'"
+  end
+  if ext == "go" then
+    if vim.fn.executable("go") == 1 then
+      return string.format("go run %s", vim.fn.shellescape(file))
+    end
+    return "echo '错误: 未找到 Go 编译器 (go)'"
+  end
+  if ext == "zig" then
+    if vim.fn.executable("zig") == 1 then
+      return string.format("zig run %s", vim.fn.shellescape(file))
+    end
+    return "echo '错误: 未找到 Zig 编译器 (zig)'"
+  end
+  if ext == "cs" then
+    if vim.fn.executable("mcs") == 1 then
+      return string.format("mcs %s && mono %s.exe",
+        vim.fn.shellescape(file), vim.fn.shellescape(base))
+    end
+    return "echo '错误: 未找到 C# 编译器 (mcs)'"
+  end
+  if ext == "html" then
+    vim.fn.jobstart({ "xdg-open", file }, { detach = true })
+    vim.notify("浏览器中打开: " .. file)
+    return nil, true
+  end
+  return "echo '不支持编译该文件类型: " .. ext .. "'"
+end
 
-  local full_cmd = string.format("cd %s && clear && %s; echo; echo '按 Enter 退出'; read",
-    vim.fn.shellescape(dir), cmd)
+-- 编译并运行（底部终端分屏）
+map("n", "<leader>k", function()
+  local file = vim.fn.expand("%:p")
+  local dir = vim.fn.expand("%:p:h")
+  local cmd, is_html = compile_cmd(file, dir)
+  if is_html then
+    return
+  end
+  local shell = detect_shell()
+  Snacks.terminal({ shell, "-c", string.format("clear && %s; echo; echo '按 Enter 退出'; read", cmd) }, {
+    cwd = dir,
+    win = { position = "bottom", height = 0.25 },
+  })
+end, { desc = "Compile & run" })
 
-  run_in_terminal(full_cmd)
-end, { desc = "编译并运行" })
+-- Compile & run (external terminal)
+map("n", "<leader>K", function()
+  local file = vim.fn.expand("%:p")
+  local dir = vim.fn.expand("%:p:h")
+  local cmd, is_html = compile_cmd(file, dir)
+  if is_html then
+    return
+  end
+  run_in_terminal(string.format("cd %s && clear && %s; echo; echo '按 Enter 退出'; read",
+    vim.fn.shellescape(dir), cmd))
+end, { desc = "Compile & run (external)" })
 
--- 终端模式下 Ctrl+HJKL 跳转窗口
-map("t", "<C-h>", "<C-\\><C-n><C-w>h", { desc = "终端左移" })
-map("t", "<C-j>", "<C-\\><C-n><C-w>j", { desc = "终端下移" })
-map("t", "<C-k>", "<C-\\><C-n><C-w>k", { desc = "终端上移" })
-map("t", "<C-l>", "<C-\\><C-n><C-w>l", { desc = "终端右移" })
+-- Terminal mode: Ctrl+HJKL window navigation
+map("t", "<C-h>", "<C-\\><C-n><C-w>h", { desc = "Terminal: move left" })
+map("t", "<C-j>", "<C-\\><C-n><C-w>j", { desc = "Terminal: move down" })
+map("t", "<C-k>", "<C-\\><C-n><C-w>k", { desc = "Terminal: move up" })
+map("t", "<C-l>", "<C-\\><C-n><C-w>l", { desc = "Terminal: move right" })

@@ -69,6 +69,16 @@ return {
     "mfussenegger/nvim-dap",
     enabled = enabled,
     optional = true,
+    dependencies = {
+      "mfussenegger/nvim-dap-python",
+      keys = {
+        { "<leader>dPt", function() require('dap-python').test_method() end, desc = "Debug Method", ft = "python" },
+        { "<leader>dPc", function() require('dap-python').test_class() end, desc = "Debug Class", ft = "python" },
+      },
+      config = function()
+        require("dap-python").setup("debugpy-adapter")
+      end,
+    },
     config = function()
       local dap = require("dap")
       dap.configurations.python = {
@@ -101,5 +111,20 @@ return {
         },
       }
     end,
+  },
+  {
+    "nvim-neotest/neotest",
+    enabled = enabled,
+    optional = true,
+    dependencies = {
+      "nvim-neotest/neotest-python",
+    },
+    opts = {
+      adapters = {
+        ["neotest-python"] = {
+          runner = "pytest",
+        },
+      },
+    },
   },
 }

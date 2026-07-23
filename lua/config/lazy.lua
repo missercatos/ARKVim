@@ -30,13 +30,22 @@ end
 if vim.fn.executable("node") == 1 then
   table.insert(spec, { import = "lazyvim.plugins.extras.lang.typescript" })
 end
+if vim.fn.executable("java") == 1 then
+  table.insert(spec, { import = "lazyvim.plugins.extras.lang.java" })
+end
+if vim.fn.executable("go") == 1 then
+  table.insert(spec, { import = "lazyvim.plugins.extras.lang.go" })
+end
+if vim.fn.executable("ruby") == 1 then
+  table.insert(spec, { import = "lazyvim.plugins.extras.lang.ruby" })
+end
 
 table.insert(spec, { import = "plugins" })
 
 require("lazy").setup({
   spec = spec,
   defaults = {
-    lazy = false,
+    lazy = true,
     version = false,
   },
   install = { colorscheme = { "tokyonight" } },
@@ -45,6 +54,9 @@ require("lazy").setup({
     notify = false,
   },
   performance = {
+    cache = {
+      enabled = true,
+    },
     rtp = {
       disabled_plugins = {
         "gzip",

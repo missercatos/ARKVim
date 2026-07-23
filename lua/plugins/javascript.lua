@@ -13,16 +13,6 @@ return {
     end,
   },
   {
-    "neovim/nvim-lspconfig",
-    enabled = enabled,
-    opts = {
-      servers = {
-        ts_ls = {},
-        eslint = {},
-      },
-    },
-  },
-  {
     "stevearc/conform.nvim",
     enabled = enabled,
     optional = true,
