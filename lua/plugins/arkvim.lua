@@ -1,3 +1,5 @@
+local cava = require("arkvim.cava-theme").read_cava_colors()
+
 return {
   {
     "folke/tokyonight.nvim",
@@ -9,6 +11,13 @@ return {
         floats = "transparent",
       },
       on_colors = function(colors)
+        if cava then
+          colors.cyan   = cava[1] or colors.cyan
+          colors.blue   = cava[2] or colors.blue
+          colors.purple = cava[3] or colors.purple
+          colors.red    = cava[4] or colors.red
+          colors.orange = cava[5] or colors.orange
+        end
         colors.bg = "NONE"
         colors.bg_dark = "NONE"
         colors.bg_sidebar = "NONE"
@@ -18,6 +27,13 @@ return {
         hl.Normal = { bg = "NONE", ctermbg = "NONE" }
         hl.NormalNC = { bg = "NONE", ctermbg = "NONE" }
         hl.NormalFloat = { bg = "NONE", ctermbg = "NONE" }
+        hl.Pmenu = { bg = "NONE", ctermbg = "NONE" }
+        hl.PmenuSel = { bg = "NONE", ctermbg = "NONE" }
+        hl.PmenuSbar = { bg = "NONE", ctermbg = "NONE" }
+        hl.PmenuThumb = { bg = "NONE", ctermbg = "NONE" }
+        hl.TabLine = { bg = "NONE", ctermbg = "NONE" }
+        hl.TabLineFill = { bg = "NONE", ctermbg = "NONE" }
+        hl.TabLineSel = { bg = "NONE", ctermbg = "NONE" }
       end,
     },
   },
