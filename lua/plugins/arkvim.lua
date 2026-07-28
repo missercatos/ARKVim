@@ -24,6 +24,9 @@ return {
   {
     "folke/snacks.nvim",
     opts = function(_, opts)
+      opts.image = vim.tbl_deep_extend("force", opts.image or {}, {
+        enabled = true,
+      })
       opts.dashboard = vim.tbl_deep_extend("force", opts.dashboard or {}, {
         sections = {
           {
@@ -34,7 +37,6 @@ return {
             indent = 0,
             ttl = 0,
           },
-          { section = "keys", gap = 1, padding = 1 },
           { section = "startup" },
         },
       })
@@ -42,6 +44,21 @@ return {
         terminal = {
           wo = { winblend = 0 },
         },
+      })
+
+      vim.api.nvim_create_autocmd("User", {
+        pattern = "SnacksDashboardOpened",
+        once = true,
+        callback = function()
+          vim.defer_fn(function()
+            local file = vim.fn.stdpath("config") .. "/lua/arkvim/amya.png"
+            if vim.fn.filereadable(file) == 1 then
+              pcall(function()
+                Snacks.image.placement.new(vim.api.nvim_get_current_buf(), file, { pos = { 11, 77 } })
+              end)
+            end
+          end, 200)
+        end,
       })
     end,
   },
