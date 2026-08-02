@@ -12,10 +12,10 @@ return {
       },
       on_colors = function(colors)
         if cava then
-          colors.cyan   = cava[1] or colors.cyan
-          colors.blue   = cava[2] or colors.blue
+          colors.cyan = cava[1] or colors.cyan
+          colors.blue = cava[2] or colors.blue
           colors.purple = cava[3] or colors.purple
-          colors.red    = cava[4] or colors.red
+          colors.red = cava[4] or colors.red
           colors.orange = cava[5] or colors.orange
         end
         colors.bg = "NONE"
@@ -67,7 +67,7 @@ return {
         once = true,
         callback = function()
           vim.defer_fn(function()
-            local file = vim.fn.stdpath("config") .. "/lua/arkvim/amya.png"
+            local file = vim.fn.stdpath("config") .. "/lua/arkvim/xiaomo.png"
             if vim.fn.filereadable(file) == 1 then
               pcall(function()
                 Snacks.image.placement.new(vim.api.nvim_get_current_buf(), file, { pos = { 11, 77 } })
