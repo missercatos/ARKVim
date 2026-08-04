@@ -55,40 +55,6 @@ local function open_external_terminal(dir)
   vim.notify("找不到可用的终端模拟器", vim.log.levels.WARN)
 end
 
-local function run_in_terminal(cmd)
-  if vim.fn.has("mac") == 1 then
-    mac_temp_script({ "#!/bin/bash", cmd })
-    return
-  end
-  local shell = detect_shell()
-  local terms = {
-    { "gnome-terminal", "--", shell, "-c", cmd },
-    { "konsole", "-e", shell, "-c", cmd },
-    { "alacritty", "-e", shell, "-c", cmd },
-    { "kitty", shell, "-c", cmd },
-    { "wezterm", "start", "--", shell, "-c", cmd },
-    { "xfce4-terminal", "-e", shell, "-c", cmd },
-    { "lxterminal", "-e", shell, "-c", cmd },
-    { "foot", shell, "-c", cmd },
-    { "urxvt", "-e", shell, "-c", cmd },
-    { "st", "-e", shell, "-c", cmd },
-    { "terminator", "-e", shell, "-c", cmd },
-    { "tilix", "-e", shell, "-c", cmd },
-    { "xterm", "-e", shell, "-c", cmd },
-  }
-  for _, t in ipairs(terms) do
-    if vim.fn.executable(t[1]) == 1 then
-      vim.fn.jobstart(t, { detach = true })
-      return
-    end
-  end
-  if vim.fn.executable("x-terminal-emulator") == 1 then
-    vim.fn.jobstart({ "x-terminal-emulator", "-e", shell, "-c", cmd }, { detach = true })
-    return
-  end
-  vim.notify("找不到可用的终端模拟器", vim.log.levels.WARN)
-end
-
 -- 在下方打开终端（当前文件所在目录）
 map("n", "<leader>ft", function()
   local dir = vim.fn.expand("%:p:h")
@@ -184,7 +150,26 @@ map("n", "<leader>k", function()
   })
 end, { desc = "Compile & run" })
 
--- Compile & run (external terminal)
+-- 检测 nvim 当前所在终端模拟器
+local function detect_terminal()
+  local function has_env(name)
+    local v = vim.fn.getenv(name)
+    return v ~= vim.NIL and v ~= ""
+  end
+  if has_env("KITTY_WINDOW_ID") or has_env("KITTY_LISTEN_ON") then
+    return "kitty"
+  end
+  if has_env("KONSOLE_VERSION") then
+    return "konsole"
+  end
+  local term = vim.fn.getenv("TERM")
+  if type(term) == "string" and term:match("^foot") then
+    return "foot"
+  end
+  return nil
+end
+
+-- Compile & run (新开浮动终端窗口，随所在终端模拟器变化)
 map("n", "<leader>K", function()
   local file = vim.fn.expand("%:p")
   local dir = vim.fn.expand("%:p:h")
@@ -192,9 +177,34 @@ map("n", "<leader>K", function()
   if is_html then
     return
   end
-  run_in_terminal(string.format("cd %s && clear && %s; echo; echo '按 Enter 退出'; read",
-    vim.fn.shellescape(dir), cmd))
-end, { desc = "Compile & run (external)" })
+  local shell = detect_shell()
+  local full = string.format("cd %s && clear && %s; echo; echo '按 Enter 退出'; read",
+    vim.fn.shellescape(dir), cmd)
+  local term = detect_terminal()
+
+  if term == "kitty" and vim.fn.executable("kitty") == 1 then
+    local env = vim.fn.environ()
+    env["KITTY_LISTEN_ON"] = nil
+    vim.fn.jobstart({ "kitty", "--class", "nvim-float-term", "--title", "编译运行",
+      "--directory", dir, shell, "-c", full }, { detach = true, env = env })
+    return
+  end
+
+  if term == "konsole" and vim.fn.executable("konsole") == 1 then
+    local set_title = string.format("printf '\\033]0;%s\\007'", "编译运行")
+    vim.fn.jobstart({ "konsole", "--workdir", dir, "-e", shell, "-c",
+      set_title .. " && " .. full }, { detach = true })
+    return
+  end
+
+  if term == "foot" and vim.fn.executable("foot") == 1 then
+    vim.fn.jobstart({ "foot", "--app-id", "nvim-float-term", "--title", "编译运行",
+      "--working-directory", dir, shell, "-c", full }, { detach = true })
+    return
+  end
+
+  vim.notify("无法识别终端模拟器（支持 kitty/konsole/foot），请在其中运行 nvim", vim.log.levels.WARN)
+end, { desc = "Compile & run (floating terminal window)" })
 
 -- Terminal mode: Ctrl+HJKL window navigation
 map("t", "<C-h>", "<C-\\><C-n><C-w>h", { desc = "Terminal: move left" })
