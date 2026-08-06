@@ -67,11 +67,13 @@ return {
         once = true,
         callback = function()
           vim.defer_fn(function()
-            local file = vim.fn.stdpath("config") .. "/lua/arkvim/xiaomo.png"
+            local file = vim.fn.stdpath("config") .. "/lua/arkvim/chen.png"
             if vim.fn.filereadable(file) == 1 then
               pcall(function()
                 Snacks.image.placement.new(vim.api.nvim_get_current_buf(), file, {
                   auto_resize = true,
+                  max_width = 45,
+                  max_height = 15,
                   on_update_pre = function(p)
                     local img = Snacks.image.util.pixels_to_cells(Snacks.image.util.dim(file))
                     p.opts.pos = {
