@@ -24,6 +24,7 @@ return {
         colors.bg_statusline = "NONE"
       end,
       on_highlights = function(hl)
+        hl.Comment = { fg = "#a8b2e0" }
         hl.Normal = { bg = "NONE", ctermbg = "NONE" }
         hl.NormalNC = { bg = "NONE", ctermbg = "NONE" }
         hl.NormalFloat = { bg = "NONE", ctermbg = "NONE" }
@@ -67,7 +68,7 @@ return {
         once = true,
         callback = function()
           vim.defer_fn(function()
-            local file = vim.fn.stdpath("config") .. "/lua/arkvim/chen.png"
+            local file = vim.fn.stdpath("config") .. "/lua/arkvim/"
             if vim.fn.filereadable(file) == 1 then
               pcall(function()
                 Snacks.image.placement.new(vim.api.nvim_get_current_buf(), file, {
