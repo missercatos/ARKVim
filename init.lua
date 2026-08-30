@@ -1,5 +1,5 @@
--- 战术终端检测：TERM 由终端模拟器自身设置（foot/alacritty），
--- 不会被子进程启动的其他终端继承（kitty 启动时重设 TERM=xterm-kitty）
+-- Tactical terminal detection: TERM is set by terminal emulator (foot/alacritty),
+-- not inherited by other terminals spawned from it (kitty sets TERM=xterm-kitty)
 local function detect_tactical()
   local term = vim.fn.getenv("TERM")
   if type(term) ~= "string" then
@@ -9,7 +9,7 @@ local function detect_tactical()
 end
 vim.g.tactical = detect_tactical()
 
--- TTY检测：无桌面环境
+-- TTY detection: no desktop environment
 local function detect_tty()
   local display = vim.fn.getenv("DISPLAY")
   local wayland = vim.fn.getenv("WAYLAND_DISPLAY")
@@ -20,7 +20,7 @@ local function detect_tty()
 end
 vim.g.is_tty = detect_tty()
 
--- 如果在TTY，应用绿色主题
+-- Apply green theme if in TTY
 if vim.g.is_tty then
   local tty_theme = require("config.tty-theme")
   tty_theme.apply()

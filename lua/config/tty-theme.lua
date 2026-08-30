@@ -1,9 +1,9 @@
--- neovim TTY绿色主题 - 荧光绿色系
--- 仅在TTY环境下启用，桌面环境不受影响
+-- neovim TTY green theme - fluorescent green
+-- Only enable in TTY, no effect in desktop environment
 
 local M = {}
 
--- 检测是否在TTY
+-- Detect if running in TTY
 function M.is_tty()
     local display = vim.fn.getenv("DISPLAY")
     local wayland = vim.fn.getenv("WAYLAND_DISPLAY")
@@ -13,16 +13,16 @@ function M.is_tty()
     return false
 end
 
--- 应用绿色主题
+-- Apply green theme
 function M.apply()
     if not M.is_tty() then
         return false
     end
 
-    -- 设置颜色方案
+    -- Set colorscheme
     vim.g.colors_name = "green-tty"
 
-    -- 基础颜色定义
+    -- Color definitions
     local colors = {
         bg = "#001100",
         fg = "#33ff33",
@@ -33,50 +33,50 @@ function M.apply()
         accent = "#33ff33",
     }
 
-    -- 设置高亮组
+    -- Set highlight groups
     local highlights = {
-        -- 基础
+        -- Base
         Normal = { fg = colors.fg, bg = colors.bg },
         NormalNC = { fg = colors.fg, bg = colors.bg },
         NormalFloat = { fg = colors.fg, bg = colors.bg },
 
-        -- 光标
+        -- Cursor
         Cursor = { fg = colors.bg, bg = colors.fg },
         CursorLine = { bg = colors.dark_bg },
         CursorColumn = { bg = colors.dark_bg },
 
-        -- 选择
+        -- Selection
         Visual = { bg = colors.dark_bg },
         VisualNOS = { bg = colors.dark_bg },
 
-        -- 搜索
+        -- Search
         Search = { fg = colors.bg, bg = colors.fg },
         IncSearch = { fg = colors.bg, bg = colors.bright_fg },
         CurSearch = { fg = colors.bg, bg = colors.bright_fg },
 
-        -- 行号
+        -- Line numbers
         LineNr = { fg = colors.dim_fg },
         CursorLineNr = { fg = colors.fg },
 
-        -- 状态栏
+        -- Status line
         StatusLine = { fg = colors.fg, bg = colors.dark_bg },
         StatusLineNC = { fg = colors.dim_fg, bg = colors.dark_bg },
 
-        -- 标签栏
+        -- Tab line
         TabLine = { fg = colors.dim_fg, bg = colors.dark_bg },
         TabLineFill = { bg = colors.dark_bg },
         TabLineSel = { fg = colors.fg, bg = colors.bg },
 
-        -- 弹出菜单
+        -- Popup menu
         Pmenu = { fg = colors.fg, bg = colors.dark_bg },
         PmenuSel = { fg = colors.bg, bg = colors.fg },
         PmenuSbar = { bg = colors.dark_bg },
         PmenuThumb = { fg = colors.fg, bg = colors.bg },
 
-        -- 分割线
+        -- Separators
         WinSeparator = { fg = colors.dim_fg },
 
-        -- 语法高亮
+        -- Syntax highlighting
         Comment = { fg = colors.dim_fg, italic = true },
         Constant = { fg = colors.bright_fg },
         String = { fg = colors.light_fg },
@@ -113,7 +113,7 @@ function M.apply()
         SpecialComment = { fg = colors.dim_fg },
         Debug = { fg = colors.fg },
 
-        -- 错误/警告
+        -- Errors/Warnings
         Error = { fg = "#ff5555" },
         ErrorMsg = { fg = "#ff5555" },
         WarningMsg = { fg = "#66ff33" },
@@ -148,12 +148,12 @@ function M.apply()
         ["@comment"] = { fg = colors.dim_fg, italic = true },
     }
 
-    -- 应用高亮组
+    -- Apply highlight groups
     for group, opts in pairs(highlights) do
         vim.api.nvim_set_hl(0, group, opts)
     end
 
-    -- 设置终端颜色
+    -- Set terminal colors
     if vim.env.TERM then
         vim.g.terminal_color_0 = "#001100"
         vim.g.terminal_color_1 = "#ff5555"

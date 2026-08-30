@@ -1,5 +1,5 @@
--- 战术终端：去除花里胡哨（图标装饰/动效），仅保留功能
--- 仅在 foot/alacritty（vim.g.tactical）内生效，其他终端零影响
+-- Tactical terminal: remove fancy stuff (icons/animations), keep functionality only
+-- Only active in foot/alacritty (vim.g.tactical), zero impact in other terminals
 if not vim.g.tactical then
   return {}
 end
@@ -26,13 +26,13 @@ local tactical_kinds = {
 }
 
 return {
-  -- 图标化状态栏 → 原生极简状态栏（见 options.lua）
+  -- Icon statusline -> native minimal statusline (see options.lua)
   { "nvim-lualine/lualine.nvim", enabled = false },
-  -- 图标化标签栏 → 原生 tabline
+  -- Icon tabline -> native tabline
   { "akinsho/bufferline.nvim", enabled = false },
-  -- 命令行动效弹窗 → 原生 cmdline
+  -- Animation cmdline -> native cmdline
   { "folke/noice.nvim", enabled = false },
-  -- 启动页纯 ASCII 大 ARKVIM 头（固定磷光绿，无 lazyvim 标题/无图像），关平滑滚动/图像/动效
+  -- Dashboard: pure ASCII header (fixed green, no lazyvim title/no images), disable smooth scroll/images/animations
   {
     "folke/snacks.nvim",
     opts = function(_, opts)
@@ -66,7 +66,7 @@ return {
     "folke/snacks.nvim",
     event = "VeryLazy",
     opts = function(_, opts)
-      -- picker 隐藏文件图标（无 Nerd Font），kind 图标换 ASCII
+      -- picker: hide file icons (no Nerd Font), replace kind icons with ASCII
       opts.picker = vim.tbl_deep_extend("force", opts.picker or {}, {
         icons = {
           files = { enabled = false },
