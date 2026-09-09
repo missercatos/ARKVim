@@ -40,11 +40,11 @@ C、C++、Rust、Python、Java、JavaScript、TypeScript、HTML、CSS、Dockerfi
 
 | 快捷键 | 功能 |
 |---|---|
-| `<space>ft` | 内置底部终端 |
-| `<space>fT` | 外部终端窗口（自动检测终端模拟器） |
+| `<space>t` | 内置底部终端（当前文件所在目录） |
+| `<space>T` | 外部终端窗口（自动检测终端模拟器） |
 | `<space>k` | 编译并运行当前文件（底部内置终端） |
 | `<space>K` | 编译并运行当前文件（新开外部终端窗口） |
-| `<space>e` / `<space>E` | Snacks 文件树（根目录 / cwd） |
+| `<space>e` / `<space>E` | Snacks 文件树（根目录 / cwd），文件树内删除为 `<space>fd`（File→Delete） |
 | `<space>o` / `<space>O` | oil.nvim 文件管理器（浮动，当前目录 / cwd） |
 | `-` | oil.nvim 打开上级目录（vim-vinegar 风格） |
 | `<space>pc` | **一键创建框架工程**（选语言 → 选模板 → 输入项目名） |

@@ -56,7 +56,7 @@ local function open_external_terminal(dir)
 end
 
 -- 在下方打开终端（当前文件所在目录）
-map("n", "<leader>ft", function()
+map("n", "<leader>t", function()
   local dir = vim.fn.expand("%:p:h")
   Snacks.terminal(nil, {
     cwd = dir,
@@ -68,7 +68,7 @@ map("n", "<leader>ft", function()
 end, { desc = "Terminal below" })
 
 -- External terminal (auto-detect)
-map("n", "<leader>fT", function()
+map("n", "<leader>T", function()
   open_external_terminal(vim.fn.expand("%:p:h"))
 end, { desc = "Terminal (external)" })
 
