@@ -46,7 +46,6 @@ return {
             indent = 0,
             ttl = 0,
           },
-          { section = "keys", gap = 1, padding = 1 },
           { section = "startup", padding = 1 },
         },
         keys = tactical_keys,
