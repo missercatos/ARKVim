@@ -53,18 +53,19 @@ require("lazy").setup({
     enabled = true,
     notify = false,
   },
-  performance = {
-    cache = {
-      enabled = true,
-    },
-    rtp = {
-      disabled_plugins = {
-        "gzip",
-        "tarPlugin",
-        "tohtml",
-        "tutor",
-        "zipPlugin",
+    performance = {
+      cache = {
+        enabled = true,
+      },
+      rtp = {
+        disabled_plugins = {
+          "gzip",
+          "tarPlugin",
+          "tohtml",
+          "tutor",
+          "zipPlugin",
+          "netrwPlugin", -- oil takes over directory editing
+        },
       },
     },
-  },
 })

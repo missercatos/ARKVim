@@ -18,7 +18,7 @@ end
 local function mac_temp_script(lines)
   local tmp = vim.fn.tempname() .. ".command"
   vim.fn.writefile(lines, tmp)
-  vim.fn.setfperm(tmp, "755")
+  vim.fn.setfperm(tmp, "rwxr-xr-x")
   vim.fn.jobstart({ "open", tmp }, { detach = true })
 end
 
@@ -211,3 +211,31 @@ map("t", "<C-h>", "<C-\\><C-n><C-w>h", { desc = "Terminal: move left" })
 map("t", "<C-j>", "<C-\\><C-n><C-w>j", { desc = "Terminal: move down" })
 map("t", "<C-k>", "<C-\\><C-n><C-w>k", { desc = "Terminal: move up" })
 map("t", "<C-l>", "<C-\\><C-n><C-w>l", { desc = "Terminal: move right" })
+
+-- One-key project scaffold: pick language -> framework -> name,
+-- the skeleton is created under the current directory.
+--   Java: Spring Boot / plain | C,C++: CMake | Go: go module
+--   Rust: cargo | Python: package/FastAPI | DevOps: docker compose
+map("n", "<leader>pc", function()
+  require("arkvim.scaffold").create()
+end, { desc = "Scaffold project" })
+
+-- Docker / Compose quick actions (bottom built-in terminal)
+-- helpers: lua/arkvim/devops.lua
+local devops_actions = {
+  { "<leader>Dp", function(d) d.compose("ps") end, "Compose: ps" },
+  { "<leader>Du", function(d) d.compose("up -d --build") end, "Compose: up -d --build" },
+  { "<leader>Dd", function(d) d.compose("down") end, "Compose: down" },
+  { "<leader>Db", function(d) d.compose("build") end, "Compose: build" },
+  { "<leader>Dl", function(d) d.compose("logs -f --tail 200", true) end, "Compose: logs -f" },
+  { "<leader>Ds", function(d) d.run("docker ps -a") end, "Docker: ps" },
+  { "<leader>Di", function(d) d.run("docker images") end, "Docker: images" },
+  { "<leader>Dx", function(d) d.compose_exec() end, "Compose: exec" },
+}
+for _, a in ipairs(devops_actions) do
+  local fn = a[2]
+  map("n", a[1], function()
+    fn(require("arkvim.devops"))
+  end, { desc = a[3] })
+end
+
