@@ -13,6 +13,15 @@ return {
     dependencies = {
       "rcarriga/nvim-notify",
     },
+    {
+      "rcarriga/nvim-notify",
+      opts = {
+        -- transparent background; give notify a concrete colour so it
+        -- does not warn about a missing NotifyBackground highlight group
+        background_colour = "#1a1b26",
+        timeout = 3000,
+      },
+    },
     opts = {
       cmdline = {
         enabled = true, -- replaces the native command line

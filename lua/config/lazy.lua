@@ -39,6 +39,9 @@ end
 if vim.fn.executable("ruby") == 1 then
   table.insert(spec, { import = "lazyvim.plugins.extras.lang.ruby" })
 end
+if vim.fn.executable("docker") == 1 or vim.fn.executable("docker-compose") == 1 then
+  table.insert(spec, { import = "lazyvim.plugins.extras.lang.docker" })
+end
 
 table.insert(spec, { import = "plugins" })
 

@@ -33,7 +33,6 @@ return {
         hsl_fn = true, -- css hsl() / hsla() functions
         mode = "background", -- paint the color behind the token
         tailwind = true, -- tailwind palette support
-        sass = { enable = true },
       },
     },
   },

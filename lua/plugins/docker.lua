@@ -1,13 +1,17 @@
--- Docker / Docker Compose language support
--- LazyVim docker extra: dockerls + docker_compose_language_service + hadolint
--- Quick Docker actions (<leader>D*) live in config/keymaps.lua -> arkvim/devops.lua
+-- Docker / Compose language support
+-- The `lazyvim.plugins.extras.lang.docker` extra (dockerls + compose LS + hadolint)
+-- is imported from config/lazy.lua (kept in correct import order).
+-- Here we only add what the extra does not cover.
 local has_docker = vim.fn.executable("docker") == 1
 local has_compose = vim.fn.executable("docker-compose") == 1
 
 return {
   {
-    import = "lazyvim.plugins.extras.lang.docker",
-    enabled = has_docker or has_compose,
+    -- yaml parser for compose files (dockerfile parser is added by the docker extra)
+    "nvim-treesitter/nvim-treesitter",
+    opts = function(_, opts)
+      vim.list_extend(opts.ensure_installed, { "yaml" })
+    end,
   },
   {
     "mason-org/mason.nvim",
@@ -19,20 +23,5 @@ return {
         "hadolint",
       })
     end,
-  },
-  {
-    "nvim-treesitter/nvim-treesitter",
-    opts = function(_, opts)
-      vim.list_extend(opts.ensure_installed, { "dockerfile", "yaml" })
-    end,
-  },
-  {
-    "neovim/nvim-lspconfig",
-    opts = {
-      servers = {
-        dockerls = {},
-        docker_compose_language_service = {},
-      },
-    },
   },
 }

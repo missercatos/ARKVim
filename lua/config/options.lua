@@ -6,6 +6,15 @@ if vim.env.DISPLAY == nil and vim.env.WAYLAND_DISPLAY == nil then
   vim.o.termguicolors = false
 end
 
+-- Expose Mason's bin dir early: LazyVim's treesitter build auto-installs the
+-- `tree-sitter` CLI through Mason at startup. If Mason's bin is not yet on
+-- `PATH`, that install races with Mason's own config and repeatedly fails
+-- with "Package is already installing".
+local mason_bin = vim.fn.stdpath("data") .. "/mason/bin"
+if vim.fn.isdirectory(mason_bin) == 1 and not vim.env.PATH:find(mason_bin, 1, true) then
+  vim.env.PATH = mason_bin .. ":" .. vim.env.PATH
+end
+
 -- 战术终端（foot/alacritty）：准星光标拖影 + 快速响应 + 原生极简 UI
 if vim.g.tactical then
   -- 光标拖影：cursorline(行) + cursorcolumn(列) 十字准星，配绿底高亮
