@@ -645,6 +645,12 @@ local function pick(prompt, items, cb)
   end)
 end
 
+--- Language -> default file extension map (used by autocmds + <space>a)
+M.lang_ext = {
+  java = "java", python = "py", rust = "rs", go = "go",
+  c = "c", cpp = "cpp", devops = "yml",
+}
+
 function M.create()
   pick("选择语言", M.langs, function(lang)
     pick("选择框架模板 (" .. lang.label .. ")", lang.frameworks, function(tpl)
@@ -666,10 +672,26 @@ function M.create()
         vim.fn.system({ "rm", "-rf", target })
         return
       end
-      notify((target .. "\n" .. res))
+
+      -- Set project language for auto-extension (autocmds + <space>a)
+      local lang_key = lang.label:lower()
+      if lang_key == "c++" then
+        lang_key = "cpp"
+      elseif lang_key == "devops" then
+        lang_key = "devops"
+      end
+      vim.g.arkvim_project_lang = lang_key
+      vim.g.arkvim_project_main = tpl.main or ""
+
+      -- cd into the project so <space>e tree shows only this project
+      vim.cmd("cd " .. vim.fn.fnameescape(target))
+      notify(target .. "\n" .. res .. "\n已进入项目目录")
+
+      -- Auto-open the main file
       local main = tpl.main or ""
-      local open = target .. (main ~= "" and "/" .. main or "")
-      pcall(vim.cmd, "edit " .. vim.fn.fnameescape(open))
+      if main ~= "" then
+        pcall(vim.cmd, "edit " .. vim.fn.fnameescape(target .. "/" .. main))
+      end
     end)
   end)
 end
