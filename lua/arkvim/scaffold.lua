@@ -621,7 +621,7 @@ M.frameworks = {
 -- ---------------------------------------------------------------------------
 
 local LIST_HEIGHT = 14
-local WIN_WIDTH = 64
+local WIN_WIDTH = 50
 local SEARCH_HEIGHT = 1
 local ns = vim.api.nvim_create_namespace("arkvim_picker")
 
@@ -652,7 +652,7 @@ local function framework_picker(callback)
   vim.bo[buf].bufhidden = "wipe"
   vim.bo[buf].filetype = "arkvim-framework-picker"
 
-  local total_h = SEARCH_HEIGHT + 1 + LIST_HEIGHT  -- search + separator + list
+  local total_h = SEARCH_HEIGHT + 1 + LIST_HEIGHT
   local win = vim.api.nvim_open_win(buf, true, {
     relative = "editor",
     width = WIN_WIDTH,
@@ -661,8 +661,6 @@ local function framework_picker(callback)
     col = math.floor((vim.o.columns - WIN_WIDTH) / 2),
     style = "minimal",
     border = "rounded",
-    title = " 选择框架  ",
-    title_pos = "center",
   })
 
   local function apply_filter()
@@ -680,19 +678,17 @@ local function framework_picker(callback)
   local function render()
     local visible = math.min(LIST_HEIGHT, #filtered)
 
-    -- search line
-    local search_line = " 🔍 " .. search_text
+    -- search line: simple text, no emoji
+    local search_line = search_text == "" and " " or search_text
     local sep = string.rep("─", WIN_WIDTH - 2)
 
-    -- list lines: " framework_name           language "
+    -- list lines: original format "> label  (lang)"
     local lines = { search_line, sep }
     for i = scroll_offset + 1, math.min(scroll_offset + visible, #filtered) do
       local f = filtered[i]
-      local pad = WIN_WIDTH - 6 - #f.label - #f.lang
-      if pad < 2 then pad = 2 end
-      lines[#lines + 1] = f.label .. string.rep(" ", pad) .. f.lang
+      local mark = i == cursor and "> " or "  "
+      lines[#lines + 1] = mark .. f.label .. "  (" .. f.lang .. ")"
     end
-    -- pad
     while #lines < SEARCH_HEIGHT + 1 + visible + 1 do
       lines[#lines + 1] = ""
     end
@@ -701,11 +697,8 @@ local function framework_picker(callback)
 
     -- highlights
     vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
-    -- search line dim
-    vim.api.nvim_buf_add_highlight(buf, ns, "Comment", 0, 0, #search_line)
-    -- cursor highlight in list
-    local hl_row = cursor - scroll_offset + 1  -- +2 for search+sep, -1 for 0-index → simplified
-    local list_start = SEARCH_HEIGHT + 1  -- separator line index (0-based)
+    vim.api.nvim_buf_add_highlight(buf, ns, "Comment", 0, 0, -1)
+    local list_start = SEARCH_HEIGHT + 1
     local sel_row = list_start + (cursor - scroll_offset)
     if sel_row >= list_start and sel_row < list_start + visible then
       vim.api.nvim_buf_add_highlight(buf, ns, "Visual", sel_row, 0, -1)
@@ -754,8 +747,8 @@ local function framework_picker(callback)
   vim.keymap.set("n", "q", cancel, km)
   vim.keymap.set("n", "<Esc>", cancel, km)
   -- search: start in insert mode in the search line
-  vim.api.nvim_win_set_cursor(win, { 1, 5 })
-  vim.cmd("startinsert")
+  vim.api.nvim_win_set_cursor(win, { 1, 0 })
+  vim.cmd("startinsert!")
   vim.keymap.set("i", "<Esc>", function() vim.cmd("stopinsert"); cancel() end, km)
   vim.keymap.set("i", "<CR>", function() vim.cmd("stopinsert"); select() end, km)
   vim.keymap.set("i", "<C-s>", function() vim.cmd("stopinsert"); select() end, km)
