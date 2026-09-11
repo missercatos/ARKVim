@@ -430,103 +430,22 @@ class MyApp extends StatelessWidget {
   return "Flutter (离线骨架) 已生成"
 end
 
--- ===== TypeScript / JavaScript =====
-gen.ts_node = function(target, name)
-  local t = project_tokens(name)
-  write_tree(target, {
-    ["package.json"] = fill('{"name":"{{kebab}}","version":"0.1.0","scripts":{"start":"ts-node src/index.ts"}}\n', t),
-    ["tsconfig.json"] = '{"compilerOptions":{"target":"ES2022","module":"commonjs","strict":true,"esModuleInterop":true,"outDir":"dist"}}\n',
-    ["src/index.ts"] = fill('console.log("Hello from {{NAME}}!");\n', t),
-    [".gitignore"] = "node_modules/\ndist/\n",
-  })
-  return "TypeScript Node.js 已生成"
-end
-
-gen.express = function(target, name)
-  local t = project_tokens(name)
-  write_tree(target, {
-    ["package.json"] = fill('{"name":"{{kebab}}","version":"0.1.0","scripts":{"start":"ts-node src/index.ts"}}\n', t),
-    ["tsconfig.json"] = '{"compilerOptions":{"target":"ES2022","module":"commonjs","strict":true,"esModuleInterop":true,"outDir":"dist"}}\n',
-    ["src/index.ts"] = fill([[
-import express from "express";
-const app = express();
-app.get("/", (req, res) => res.send("Hello from {{NAME}}!"));
-app.listen(3000, () => console.log("Server running on http://localhost:3000"));
-]], t),
-    ["src/routes.ts"] = 'import { Router } from "express";\nexport const router = Router();\n',
-    [".gitignore"] = "node_modules/\ndist/\n",
-  })
-  return "Express + TypeScript 已生成"
-end
-
-gen.react_vite = function(target, name)
-  local t = project_tokens(name)
-  if vim.fn.executable("npm") == 1 then
-    vim.fn.system({ "npm", "create", "vite@latest", t.kebab, "--", "--template", "react-ts" })
-    if vim.v.shell_error == 0 then return "React (Vite + TypeScript) 已生成" end
-  end
-  write_tree(target, {
-    ["package.json"] = fill('{"name":"{{kebab}}","scripts":{"dev":"vite","build":"vite build"}}\n', t),
-    ["vite.config.ts"] = 'import { defineConfig } from "vite"\nimport react from "@vitejs/plugin-react"\nexport default defineConfig({ plugins: [react()] })\n',
-    ["index.html"] = '<!DOCTYPE html><html><head><title>' .. t.NAME .. '</title></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>\n',
-    ["src/main.tsx"] = 'import React from "react"\nimport ReactDOM from "react-dom/client"\nReactDOM.createRoot(document.getElementById("root")!).render(<h1>Hello from ' .. t.NAME .. '!</h1>)\n',
-    [".gitignore"] = "node_modules/\ndist/\n",
-  })
-  return "React + Vite 已生成"
-end
-
-gen.nextjs = function(target, name)
-  local t = project_tokens(name)
-  if vim.fn.executable("npx") == 1 then
-    vim.fn.system({ "npx", "create-next-app@latest", t.kebab, "--typescript", "--eslint", "--app", "--no-src-dir" })
-    if vim.v.shell_error == 0 then return "Next.js 已生成" end
-  end
-  write_tree(target, {
-    ["package.json"] = fill('{"name":"{{kebab}}","scripts":{"dev":"next dev","build":"next build"}}\n', t),
-    ["next.config.js"] = "/** @type {import('next').NextConfig} */\nmodule.exports = {}\n",
-    ["app/page.tsx"] = fill('export default function Home() { return <h1>Hello from {{NAME}}!</h1> }\n', t),
-    [".gitignore"] = "node_modules/\n.next/\n",
-  })
-  return "Next.js (离线骨架) 已生成"
-end
-
-gen.vue = function(target, name)
-  local t = project_tokens(name)
-  if vim.fn.executable("npm") == 1 then
-    vim.fn.system({ "npm", "create", "vue@latest", t.kebab })
-    if vim.v.shell_error == 0 then return "Vue 项目已生成" end
-  end
-  write_tree(target, {
-    ["package.json"] = fill('{"name":"{{kebab}}","scripts":{"dev":"vite","build":"vite build"}}\n', t),
-    ["vite.config.ts"] = 'import { defineConfig } from "vite"\nimport vue from "@vitejs/plugin-vue"\nexport default defineConfig({ plugins: [vue()] })\n',
-    ["index.html"] = '<!DOCTYPE html><html><head><title>' .. t.NAME .. '</title></head><body><div id="app"></div><script type="module" src="/src/main.ts"></script></body></html>\n',
-    ["src/main.ts"] = 'import { createApp } from "vue"\nimport App from "./App.vue"\ncreateApp(App).mount("#app")\n',
-    ["src/App.vue"] = '<template><h1>Hello from ' .. t.NAME .. '!</h1></template>\n',
-    [".gitignore"] = "node_modules/\ndist/\n",
-  })
-  return "Vue + Vite 已生成"
-end
-
 -- ===== PHP =====
 gen.laravel = function(target, name)
   local t = project_tokens(name)
-  if vim.fn.executable("composer") == 1 then
-    vim.fn.system({ "composer", "create-project", "--prefer-dist", "laravel/laravel", t.kebab })
-    if vim.v.shell_error == 0 then return "Laravel 已生成" end
-  end
   write_tree(target, {
-    ["composer.json"] = fill('{"name":"example/{{kebab}}","require":{"php":">=8.1","laravel/framework":"^10.0"}}\n', t),
-    ["artisan"] = '#!/usr/bin/env php\n<?php\nrequire __DIR__."/vendor/autoload.php";\n$app = require_once __DIR__.'/bootstrap/app.php';\n$kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);\n$kernel->handle(new Symfony\\Component\\Console\\Input\\ArgvInput);\n',
-    ["routes/web.php"] = fill("<?php\nuse Illuminate\\Support\\Facades\\Route;\nRoute::get('/', fn() => 'Hello from {{NAME}}!');\n", t),
-    [".gitignore"] = "vendor/\n.env\n",
+    ["composer.json"] = fill('{"name":"example/{{kebab}}","require":{},"autoload":{"psr-4":{"App/":"app/"}}}\n', t),
+    ["artisan"] = "#!/usr/bin/env php\n<?php\n",
+    ["app/Http/Controllers/Controller.php"] = "<?php\nnamespace App\\Http\\Controllers;\nabstract class Controller {}\n",
+    [".gitignore"] = "vendor/\nstorage/*.key\n",
   })
-  return "Laravel (离线骨架) 已生成"
+  return "Laravel 已生成"
 end
 
 gen.php_cli = function(target, name)
   local t = project_tokens(name)
   write_tree(target, {
-    ["src/Main.php"] = fill("<?php\nnamespace {{snake}};\nclass Main {\n  public static function run(): void {\n    echo \"Hello from {{NAME}}!\\n\";\n  }\n}\n", t),
+    ["src/Main.php"] = fill("<?php\nnamespace {{snake}};\n\nclass Main {\n    public static function main(): void {\n        echo \"Hello from {{NAME}}!\\n\";\n    }\n}\n\nMain::main();\n", t),
     ["composer.json"] = fill('{"name":"example/{{kebab}}","autoload":{"psr-4":{"{{snake}}/":"src/"}}}\n', t),
     [".gitignore"] = "vendor/\n",
   })
@@ -911,10 +830,30 @@ local function framework_picker(callback)
     vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
     -- search line
     vim.api.nvim_buf_add_highlight(buf, ns, "Comment", 0, 0, -1)
-    -- cursor line highlight: row = 2 + (cursor - scroll_offset - 1)
+    -- cursor line highlight
     local hl_row = 1 + (cursor - scroll_offset)
     if hl_row >= 2 and hl_row < 2 + visible then
       vim.api.nvim_buf_add_highlight(buf, ns, "Visual", hl_row, 0, -1)
+    end
+    -- highlight matching text in filtered items
+    if search_text ~= "" then
+      local q = search_text:lower()
+      for i, f in ipairs(filtered) do
+        local row = i - scroll_offset + 1  -- +1 for search line, +1 for sep (0-indexed)
+        if row >= 2 and row < 2 + visible then
+          local label = f.label:lower()
+          local start_pos = 1
+          while start_pos <= #f.label do
+            local s, e = label:find(q, start_pos, true)
+            if not s then break end
+            -- convert to byte offset for highlight
+            local byte_start = vim.api.nvim_strwidth(f.label:sub(1, s - 1))
+            local byte_end = byte_start + vim.api.nvim_strwidth(f.label:sub(s, e))
+            vim.api.nvim_buf_add_highlight(buf, ns, "Search", row, byte_start, byte_end)
+            start_pos = e + 1
+          end
+        end
+      end
     end
   end
 
