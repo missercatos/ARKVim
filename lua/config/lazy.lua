@@ -46,6 +46,9 @@ end
 table.insert(spec, { import = "plugins" })
 
 require("arkvim.build").setup()
+require("arkvim.preview").setup()
+require("arkvim.modules").setup()
+require("arkvim.api").setup()
 
 require("lazy").setup({
   spec = spec,
