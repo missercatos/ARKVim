@@ -33,7 +33,7 @@ local function create_batch_win(cwd)
     "#",
   }
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, header)
-  vim.api.nvim_win_set_cursor(win, { #header + 1, 0 })
+  vim.api.nvim_win_set_cursor(win, { #header, 0 })
   vim.cmd("startinsert")
 
   return buf, win
@@ -148,11 +148,18 @@ return {
                       end
                     end
 
-                    local km = { buffer = buf, silent = true, nowait = true }
+                    local km = { buffer = buf, silent = true, nowait = true, noremap = true }
                     vim.keymap.set("n", "<Esc>", do_cancel, km)
-                    vim.keymap.set("i", "<Esc>", function() vim.cmd("stopinsert"); do_cancel() end, km)
+                    vim.keymap.set("i", "<Esc>", function()
+                      pcall(vim.cmd, "stopinsert")
+                      vim.schedule(do_cancel)
+                    end, km)
                     vim.keymap.set("n", "q", do_cancel, km)
-                    vim.keymap.set("i", "<C-q>", function() vim.cmd("stopinsert"); do_cancel() end, km)
+                    vim.keymap.set("i", "<C-q>", function()
+                      pcall(vim.cmd, "stopinsert")
+                      vim.schedule(do_cancel)
+                    end, km)
+                    vim.keymap.set("n", "<C-q>", do_cancel, km)
                     vim.keymap.set("n", "<C-s>", do_confirm, km)
                     vim.keymap.set("i", "<C-s>", function() vim.cmd("stopinsert"); do_confirm() end, km)
                     vim.keymap.set("i", "<CR>", function() vim.cmd("stopinsert"); do_confirm() end, km)
