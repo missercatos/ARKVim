@@ -1,8 +1,7 @@
 -- File-tree (Snacks explorer, <space>e) key tweaks
--- Delete is available as <space>fd (File → Delete) only.
--- The bare `d` default is removed so it cannot be triggered by accident
--- while the global <space>d (debug/DAP) prefix is also active.
--- `a` is overridden: cursor-aware directory detection.
+-- Delete: <space>fd | `d` removed to avoid conflict with <space>d (DAP).
+-- `a`: create relative to cursor position
+-- `A`: create relative to cwd (full path required)
 return {
   {
     "folke/snacks.nvim",
@@ -15,19 +14,18 @@ return {
                 keys = {
                   ["<leader>fd"] = "explorer_del",
                   ["d"] = false,
+
+                  -- `a` — create relative to cursor (folder → inside it, file → same dir)
                   ["a"] = function(picker)
                     local Actions = require("snacks.explorer.actions")
                     local Tree = require("snacks.explorer.tree")
-
-                    -- picker:dir() returns folder path if cursor on dir, or parent if on file
                     local base = picker:dir()
 
-                    local name = vim.fn.input("新建文件 (" .. vim.fn.fnamemodify(base, ":t") .. "/): ")
+                    local name = vim.fn.input("新建 (" .. vim.fn.fnamemodify(base, ":t") .. "/): ")
                     if not name or name == "" then
                       return
                     end
 
-                    -- Resolve: leading "/" = relative to cwd, otherwise relative to cursor dir
                     local path
                     if name:sub(1, 1) == "/" then
                       path = vim.fn.fnamemodify(picker:cwd() .. name, ":p")
@@ -35,13 +33,44 @@ return {
                       path = base .. "/" .. name
                     end
 
-                    -- Create directories + file
-                    vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
-                    if vim.fn.filereadable(path) == 0 then
-                      io.open(path, "w"):close()
+                    local is_dir = name:sub(-1) == "/"
+                    if is_dir then
+                      vim.fn.mkdir(path, "p")
+                    else
+                      vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
+                      if vim.fn.filereadable(path) == 0 then
+                        io.open(path, "w"):close()
+                      end
                     end
 
-                    -- Refresh tree and center on the new file
+                    -- Expand parent dirs, refresh, center on new item
+                    Tree:open(vim.fn.fnamemodify(path, ":h"))
+                    Tree:refresh(vim.fn.fnamemodify(path, ":h"))
+                    Actions.update(picker, { target = path })
+                  end,
+
+                  -- `A` — create relative to cwd (full path from root)
+                  ["A"] = function(picker)
+                    local Actions = require("snacks.explorer.actions")
+                    local Tree = require("snacks.explorer.tree")
+
+                    local name = vim.fn.input("新建 (cwd/): ")
+                    if not name or name == "" then
+                      return
+                    end
+
+                    local path = vim.fn.fnamemodify(picker:cwd() .. "/" .. name, ":p")
+
+                    local is_dir = name:sub(-1) == "/"
+                    if is_dir then
+                      vim.fn.mkdir(path, "p")
+                    else
+                      vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
+                      if vim.fn.filereadable(path) == 0 then
+                        io.open(path, "w"):close()
+                      end
+                    end
+
                     Tree:open(vim.fn.fnamemodify(path, ":h"))
                     Tree:refresh(vim.fn.fnamemodify(path, ":h"))
                     Actions.update(picker, { target = path })

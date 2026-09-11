@@ -45,7 +45,8 @@ C、C++、Rust、Python、Java、JavaScript、TypeScript、HTML、CSS、Dockerfi
 | `<space>k` | 编译并运行当前文件（底部内置终端） |
 | `<space>K` | 编译并运行当前文件（新开外部终端窗口） |
 | `<space>e` / `<space>E` | Snacks 文件树（根目录 / cwd），文件树内删除为 `<space>fd`（File→Delete） |
-| `<space>a` | 新建文件：光标在文件夹上→创建在该文件夹内；在文件上→创建在同一目录；支持输入 `/path/file` 指定路径。 |
+| `<space>a` | 文件树内新建：光标在文件夹上→创建在该文件夹内；在文件上→创建在同一目录。输入结尾带 `/` 创建目录。 |
+| `<space>A` | 文件树内新建（从 cwd 根目录开始）：需写完整路径如 `src/main.java` 或 `a/b/`。 |
 | `<space>o` / `<space>O` | oil.nvim 文件管理器（浮动，当前目录 / cwd） |
 | `-` | oil.nvim 打开上级目录（vim-vinegar 风格） |
 | `<space>pc` | **一键创建框架工程**（选语言 → 选模板 → 输入项目名） |
