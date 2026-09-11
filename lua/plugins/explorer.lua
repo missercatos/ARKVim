@@ -149,18 +149,11 @@ return {
                     end
 
                     local km = { buffer = buf, silent = true, nowait = true, noremap = true }
-                    vim.keymap.set("n", "<Esc>", do_cancel, km)
+
+                    -- === Insert mode (editing) ===
                     vim.keymap.set("i", "<Esc>", function()
-                      pcall(vim.cmd, "stopinsert")
-                      vim.schedule(do_cancel)
+                      vim.cmd("stopinsert")
                     end, km)
-                    vim.keymap.set("n", "q", do_cancel, km)
-                    vim.keymap.set("i", "<C-q>", function()
-                      pcall(vim.cmd, "stopinsert")
-                      vim.schedule(do_cancel)
-                    end, km)
-                    vim.keymap.set("n", "<C-q>", do_cancel, km)
-                    vim.keymap.set("n", "<C-s>", do_confirm, km)
                     vim.keymap.set("i", "<C-s>", function() vim.cmd("stopinsert"); do_confirm() end, km)
                     vim.keymap.set("i", "<CR>", function() vim.cmd("stopinsert"); do_confirm() end, km)
                     vim.keymap.set("i", "<S-CR>", function()
@@ -172,17 +165,6 @@ return {
                       local pos = vim.api.nvim_win_get_cursor(win)
                       vim.api.nvim_buf_set_lines(buf, pos[1], pos[1], false, { "" })
                       vim.api.nvim_win_set_cursor(win, { pos[1] + 1, 0 })
-                    end, km)
-                    vim.keymap.set("n", "<CR>", function()
-                      local pos = vim.api.nvim_win_get_cursor(win)
-                      local lc = vim.api.nvim_buf_line_count(buf)
-                      if pos[1] >= lc then
-                        vim.api.nvim_buf_set_lines(buf, -1, -1, false, { "" })
-                      else
-                        vim.api.nvim_buf_set_lines(buf, pos[1], pos[1], false, { "" })
-                      end
-                      vim.api.nvim_win_set_cursor(win, { math.min(pos[1] + 1, vim.api.nvim_buf_line_count(buf)), 0 })
-                      vim.cmd("startinsert")
                     end, km)
                     vim.keymap.set("i", "<Tab>", function()
                       local row = vim.api.nvim_win_get_cursor(win)[1]
@@ -213,6 +195,37 @@ return {
                     end, { buffer = buf, silent = true, expr = true })
                     vim.keymap.set("i", "<C-n>", "<Tab>", { buffer = buf, silent = true, remap = true })
                     vim.keymap.set("i", "<C-p>", "<S-Tab>", { buffer = buf, silent = true, remap = true })
+
+                    -- === Normal mode (preview) ===
+                    vim.keymap.set("n", "<Esc>", do_cancel, km)
+                    vim.keymap.set("n", "q", do_cancel, km)
+                    vim.keymap.set("n", "i", function()
+                      vim.cmd("startinsert")
+                    end, km)
+                    vim.keymap.set("n", "a", function()
+                      vim.cmd("startinsert!")
+                    end, km)
+                    vim.keymap.set("n", "o", function()
+                      local pos = vim.api.nvim_win_get_cursor(win)
+                      vim.api.nvim_buf_set_lines(buf, pos[1], pos[1], false, { "" })
+                      vim.api.nvim_win_set_cursor(win, { pos[1] + 1, 0 })
+                      vim.cmd("startinsert")
+                    end, km)
+                    vim.keymap.set("n", "<C-s>", do_confirm, km)
+                    vim.keymap.set("n", "<CR>", do_confirm, km)
+                    vim.keymap.set("n", "<C-q>", do_cancel, km)
+                    -- :q / :q! to close
+                    vim.keymap.set("n", ":", function()
+                      local input = vim.fn.input(":")
+                      if input == "q" or input == "q!" or input == "quit" or input == "quit!" then
+                        do_cancel()
+                      end
+                    end, km)
+                    -- Ctrl+HJKL: navigate between windows
+                    vim.keymap.set("n", "<C-h>", "<C-w>h", km)
+                    vim.keymap.set("n", "<C-j>", "<C-w>j", km)
+                    vim.keymap.set("n", "<C-k>", "<C-w>k", km)
+                    vim.keymap.set("n", "<C-l>", "<C-w>l", km)
                     vim.api.nvim_create_autocmd("TextChangedI", {
                       buffer = buf,
                       callback = function() resize_win(win, buf) end,
