@@ -49,6 +49,7 @@ local function resize_win(win, buf)
   local new_w = math.min(math.max(max_w + 4, 40), vim.o.columns - 4)
   local new_h = math.min(#lines + 2, vim.o.lines - 4)
   vim.api.nvim_win_set_config(win, {
+    relative = "editor",
     width = new_w,
     height = new_h,
     row = math.floor((vim.o.lines - new_h) / 2),
