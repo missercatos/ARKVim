@@ -42,10 +42,6 @@ C、C++、Rust、Python、Java、JavaScript、TypeScript、HTML、CSS、Dockerfi
 |---|---|
 | `<space>ft` | 内置底部终端（当前文件所在目录） |
 | `<space>fT` | 外部终端窗口（自动检测当前终端类型，开同类型新窗口） |
-| `:TermSplit` | 水平分割打开终端 |
-| `:TermVsplit` | 垂直分割打开终端 |
-| `:TermFloat` | 浮动窗口打开终端 |
-| `:TermClose` | 关闭当前终端 |
 | `<space>k` | 编译并运行当前文件（底部内置终端） |
 | `<space>K` | 编译并运行当前文件（新开外部终端窗口） |
 | `<space>e` / `<space>E` | Snacks 文件树（根目录 / cwd），文件树内删除为 `<space>fd`（File→Delete） |

@@ -309,29 +309,6 @@ map("t", "<C-j>", "<C-\\><C-n><C-w>j", { desc = "Terminal: move down" })
 map("t", "<C-k>", "<C-\\><C-n><C-w>k", { desc = "Terminal: move up" })
 map("t", "<C-l>", "<C-\\><C-n><C-w>l", { desc = "Terminal: move right" })
 
--- : commands for terminal management (no keymap conflicts)
-vim.api.nvim_create_user_command("TermSplit", function()
-  vim.cmd("split")
-  Snacks.terminal(nil, { win = { position = "bottom", height = 0.3 } })
-end, { desc = "Open terminal in horizontal split" })
-
-vim.api.nvim_create_user_command("TermVsplit", function()
-  vim.cmd("vsplit")
-  Snacks.terminal(nil, { win = { position = "right", width = 0.4 } })
-end, { desc = "Open terminal in vertical split" })
-
-vim.api.nvim_create_user_command("TermFloat", function()
-  Snacks.terminal(nil, { win = { position = "float" } })
-end, { desc = "Open terminal in floating window" })
-
-vim.api.nvim_create_user_command("TermClose", function()
-  if vim.bo.buftype == "terminal" then
-    vim.cmd("close")
-  else
-    vim.notify("当前不是终端窗口", vim.log.levels.WARN)
-  end
-end, { desc = "Close current terminal" })
-
 -- One-key project scaffold: pick language -> framework -> name,
 -- the skeleton is created under the current directory.
 --   Java: Spring Boot / plain | C,C++: CMake | Go: go module
