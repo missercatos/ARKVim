@@ -69,12 +69,10 @@ return {
                       relative = "editor",
                       width = width,
                       height = height,
-                      row = math.floor((vim.o.height - height) / 2),
-                      col = math.floor((vim.o.width - width) / 2),
+                      row = math.floor((vim.o.lines - height) / 2),
+                      col = math.floor((vim.o.columns - width) / 2),
                       style = "minimal",
                       border = "rounded",
-                      title = " 批量创建 (每行一个路径, 结尾 / = 目录, Ctrl-s 确认, q 取消) ",
-                      title_pos = "center",
                     })
 
                     -- Set buffer lines
