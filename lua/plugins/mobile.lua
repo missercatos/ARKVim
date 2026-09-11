@@ -19,7 +19,7 @@ return {
   -- remote-nvim.nvim: remote SSH development
   {
     "amitds1997/remote-nvim.nvim",
-    cmd = { "RemoteStart", "RemoteStop", "RemoteInfo", "Remote_cleanup" },
+    cmd = { "RemoteStart", "RemoteStop", "RemoteInfo", "RemoteCleanup" },
     keys = {
       { "<leader>Xr", "<cmd>RemoteStart<CR>", desc = "远程开发" },
     },

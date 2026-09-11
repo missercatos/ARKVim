@@ -16,20 +16,30 @@ return {
     opts = {},
   },
 
-  -- smear-cursor: animated cursor trail
+  -- smear-cursor: animated cursor trail (fast preset + longer trail + particles)
   {
     "sphamba/smear-cursor.nvim",
     event = "VeryLazy",
     opts = {
-      cursor_color = nil,
       smear_insert_mode = true,
-      stiffness = 0.3,
-      trailing_stiffness = 0.15,
-      damping = 0.8,
-      distance_stop_animating = 0.5,
-      smoothing_enabled = function()
-        return vim.fn.has("nvim-0.11") == 1
-      end,
+      -- 头部速度：越大越快，0=不动，1=瞬移
+      stiffness = 0.75,               -- default 0.6 (0.6 → 0.75)
+      -- 尾部速度：越小尾巴拖得越长（保持不变）
+      trailing_stiffness = 0.35,      -- default 0.45
+      max_length = 40,                -- default 25 (允许更长的拖影)
+      damping = 0.85,                 -- default 0.85
+      anticipation = 0.1,             -- default 0.2 (减少反向回摆)
+      distance_stop_animating = 0.5,  -- default 0.1 (更早停住)
+      time_interval = 10,             -- default 17ms (更高帧率)
+      delay_event_to_smear = 1,
+      delay_after_key = 5,
+      particles_enabled = true,       -- 粒子特效
+      -- 粒子更明显：更多、更大存活时间、更长尾迹
+      particle_max_num = 200,         -- default 100
+      particles_per_second = 400,     -- default 200
+      particles_per_length = 2.0,     -- default 1.0
+      particle_max_lifetime = 500,    -- default 300 (ms)
+      particle_spread = 0.6,          -- default 0.5 (更分散)
     },
   },
 
@@ -122,38 +132,6 @@ return {
     opts = {
       use_default_keymaps = false,
       max_join_length = 150,
-    },
-  },
-
-  -- satellite.nvim: scrollbar with diagnostics/git
-  {
-    "lewis6991/satellite.nvim",
-    event = "VeryLazy",
-    enabled = false,
-    opts = {
-      current_only = true,
-      winblend = 50,
-      excluded_filetypes = {},
-      handlers = {
-        cursor = { enable = false },
-      },
-    },
-  },
-
-  -- dropbar.nvim: VSCode-like breadcrumbs (disabled by default, toggle with <leader>uB)
-  {
-    "Bekaboo/dropbar.nvim",
-    event = "VeryLazy",
-    enabled = false,
-    opts = {
-      bar = {
-        enable = function(buf, win, _)
-          if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buftype == "" and vim.api.nvim_win_is_valid(win) then
-            return vim.fn.win_gettype(win) == ""
-          end
-          return false
-        end,
-      },
     },
   },
 }

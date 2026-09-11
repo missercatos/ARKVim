@@ -12,83 +12,10 @@ end
 
 -- ---------------------------------------------------------------------------
 -- A. auto-load on project detection (lightweight, no external binary required)
+-- NOTE: Go/Python/Ruby neotest adapters are already provided by LazyVim's
+-- lang extras. Node/Java adapters are registered via plugins/neotest.lua.
+-- Do NOT call neotest.setup() here — it would clobber LazyVim's config.
 -- ---------------------------------------------------------------------------
-
-add({
-  id = "go-test",
-  label = "Go 测试",
-  kinds = { "go" },
-  auto = true,
-  plugins = { "nvim-neotest/neotest-go" },
-  hint = nil,
-  load = function()
-    local ok, neotest = pcall(require, "neotest")
-    if ok then
-      neotest.setup({
-        adapters = { require("neotest-go") },
-        output = { enabled = true, open_on_run = true },
-        summary = { enabled = true },
-      })
-    end
-  end,
-})
-
-add({
-  id = "python-test",
-  label = "Python 测试",
-  kinds = { "python" },
-  auto = true,
-  plugins = { "nvim-neotest/neotest-python" },
-  hint = nil,
-  load = function()
-    local ok, neotest = pcall(require, "neotest")
-    if ok then
-      neotest.setup({
-        adapters = { require("neotest-python") },
-        output = { enabled = true, open_on_run = true },
-        summary = { enabled = true },
-      })
-    end
-  end,
-})
-
-add({
-  id = "node-test",
-  label = "Node 测试",
-  kinds = { "node" },
-  auto = true,
-  plugins = { "marilari88/neotest-vitest" },
-  hint = nil,
-  load = function()
-    local ok, neotest = pcall(require, "neotest")
-    if ok then
-      neotest.setup({
-        adapters = { require("neotest-vitest") },
-        output = { enabled = true, open_on_run = true },
-        summary = { enabled = true },
-      })
-    end
-  end,
-})
-
-add({
-  id = "java-test",
-  label = "Java 测试",
-  kinds = { "java", "spring", "gradle", "gradle_kotlin" },
-  auto = true,
-  plugins = { "nvim-neotest/neotest-java" },
-  hint = nil,
-  load = function()
-    local ok, neotest = pcall(require, "neotest")
-    if ok then
-      neotest.setup({
-        adapters = { require("neotest-java") },
-        output = { enabled = true, open_on_run = true },
-        summary = { enabled = true },
-      })
-    end
-  end,
-})
 
 add({
   id = "docker-compose",
@@ -156,15 +83,9 @@ add({
   },
   hint = "按 <leader>ji 初始化 molten · <leader>jl 行内执行",
   load = function()
-    local ok1, molten = pcall(require, "molten")
-    if ok1 then
-      molten.setup({
-        viz_provider = "snacks_image",
-        automatically_open_output = true,
-      })
-    end
-    local ok2, sniprun = pcall(require, "sniprun")
-    if ok2 then
+    -- molten globals (incl. snacks.nvim image provider) are set by its plugin spec.
+    local ok, sniprun = pcall(require, "sniprun")
+    if ok then
       sniprun.setup({
         display = { "TemporaryCodeResult" },
       })
@@ -217,14 +138,11 @@ add({
   auto = false,
   plugins = { "amitds1997/remote-nvim.nvim" },
   keys = {
-    { "<leader>Xr", function() require("remote-nvim").open() end, desc = "远程开发" },
+    { "<leader>Xr", "<cmd>RemoteStart<CR>", desc = "远程开发" },
   },
   hint = "按 <leader>Xr 连接远程开发环境",
   load = function()
-    local ok, remote = pcall(require, "remote-nvim")
-    if ok then
-      remote.setup()
-    end
+    -- remote-nvim is configured by its plugin spec (config = true); nothing to do.
   end,
 })
 

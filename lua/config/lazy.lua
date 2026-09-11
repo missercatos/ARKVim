@@ -43,6 +43,9 @@ if vim.fn.executable("docker") == 1 or vim.fn.executable("docker-compose") == 1 
   table.insert(spec, { import = "lazyvim.plugins.extras.lang.docker" })
 end
 
+table.insert(spec, { import = "lazyvim.plugins.extras.dap.core" })
+table.insert(spec, { import = "lazyvim.plugins.extras.test.core" })
+
 table.insert(spec, { import = "plugins" })
 
 require("arkvim.build").setup()

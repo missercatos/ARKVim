@@ -50,6 +50,7 @@ local function watch_buf(buf)
 
   local file = buf_name(buf)
   local dir = vim.fn.fnamemodify(file, ":h")
+  local base = vim.fn.fnamemodify(file, ":t")
 
   local file_watcher = vim.uv.new_fs_event()
   local dir_watcher = vim.uv.new_fs_event()
@@ -58,18 +59,24 @@ local function watch_buf(buf)
     return
   end
 
-  file_watcher:start(file, "change", function(err)
-    if err then
+  -- 监听文件本身：内容变更 (uv_fs_event:start 的第二个参数是 flags 表)
+  file_watcher:start(file, {}, function(err, _, events)
+    if err or not events then
       return
     end
-    debounced_checktime(buf)
+    if events.change or events.rename then
+      debounced_checktime(buf)
+    end
   end)
 
-  dir_watcher:start(dir, "rename", function(err)
-    if err then
+  -- 监听所在目录：编辑器原子写(临时文件 + rename)会替换原文件
+  dir_watcher:start(dir, {}, function(err, fname, events)
+    if err or not events or fname ~= base then
       return
     end
-    debounced_checktime(buf)
+    if events.change or events.rename then
+      debounced_checktime(buf)
+    end
   end)
 
   watchers[buf] = {

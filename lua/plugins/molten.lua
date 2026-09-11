@@ -14,6 +14,9 @@ return {
       vim.g.molten_output_type = "window"
       vim.g.molten_auto_open_output = true
       vim.g.molten_cover_comment_start_end = true
+      vim.g.molten_image_provider = "snacks.nvim"
+      vim.g.molten_virt_text_output = true
+      vim.g.molten_wrap_output = true
     end,
   },
 

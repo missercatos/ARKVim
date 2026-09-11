@@ -41,11 +41,11 @@ function M.setup()
     return ok and #out > 0 and vim.v.shell_error == 0
   end
 
-  -- which-key 分组注册
+  -- which-key 分组注册 (v3 API: add + group)
   local ok_wk, wk = pcall(require, "which-key")
   if ok_wk then
-    wk.register({
-      ["<leader>G"] = { name = "+Git (gh)" },
+    wk.add({
+      { "<leader>G", group = "+Git (gh)" },
     })
   end
 

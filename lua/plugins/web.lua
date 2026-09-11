@@ -21,7 +21,6 @@ return {
         "html",
         "css",
         "scss",
-        "tailwindcss",
       })
     end,
   },
