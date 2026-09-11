@@ -733,62 +733,69 @@ local function framework_picker(callback)
 
   -- keymaps
   local km = { buffer = buf, silent = true, nowait = true, noremap = true }
-  -- navigation
+  local mode = "insert" -- "insert" or "nav"
+
+  local function to_nav()
+    mode = "nav"
+    vim.cmd("stopinsert!")
+    local row = math.min(cursor - scroll_offset, vim.api.nvim_buf_line_count(buf))
+    pcall(vim.api.nvim_win_set_cursor, win, { row + 1, 0 })
+    render()
+  end
+
+  local function to_insert()
+    mode = "insert"
+    vim.cmd("startinsert!")
+    pcall(vim.api.nvim_win_set_cursor, win, { 1, vim.api.nvim_strwidth(vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]) })
+  end
+
+  -- === insert mode keymaps ===
+  -- type into search (no char mappings needed, Vim handles it natively)
+  -- backspace
+  local function insert_bs()
+    search_text = search_text:sub(1, -2)
+    apply_filter()
+    render()
+    local line = vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]
+    pcall(vim.api.nvim_win_set_cursor, win, { 1, vim.api.nvim_strwidth(line) })
+  end
+  vim.keymap.set("i", "<BS>", insert_bs, km)
+  vim.keymap.set("i", "<C-h>", insert_bs, km)
+  -- esc → navigation mode
+  vim.keymap.set("i", "<Esc>", to_nav, km)
+  -- enter → confirm
+  vim.keymap.set("i", "<CR>", function() vim.cmd("stopinsert"); select() end, km)
+  vim.keymap.set("i", "<C-s>", function() vim.cmd("stopinsert"); select() end, km)
+  -- ctrl+q → cancel
+  vim.keymap.set("i", "<C-q>", function() vim.cmd("stopinsert"); cancel() end, km)
+  -- arrows in insert → switch to nav + move
+  vim.keymap.set("i", "<Down>", function() to_nav(); move(1) end, km)
+  vim.keymap.set("i", "<Up>", function() to_nav(); move(-1) end, km)
+
+  -- === navigation mode keymaps ===
+  -- j/k = up/down
   vim.keymap.set("n", "j", function() move(1) end, km)
-  vim.keymap.set("n", "<Down>", function() move(1) end, km)
   vim.keymap.set("n", "k", function() move(-1) end, km)
+  vim.keymap.set("n", "<Down>", function() move(1) end, km)
   vim.keymap.set("n", "<Up>", function() move(-1) end, km)
+  -- page scroll
   vim.keymap.set("n", "<C-d>", function() move(7) end, km)
   vim.keymap.set("n", "<C-u>", function() move(-7) end, km)
+  -- top/bottom
   vim.keymap.set("n", "G", function() cursor = #filtered; scroll_offset = math.max(0, #filtered - LIST_HEIGHT); render() end, km)
   vim.keymap.set("n", "gg", function() cursor = 1; scroll_offset = 0; render() end, km)
-  -- select / cancel
+  -- confirm / cancel
   vim.keymap.set("n", "<CR>", select, km)
   vim.keymap.set("n", "<Space>", select, km)
   vim.keymap.set("n", "q", cancel, km)
   vim.keymap.set("n", "<Esc>", cancel, km)
-  -- search: start in insert mode in the search line
-  vim.api.nvim_win_set_cursor(win, { 1, 0 })
-  vim.cmd("startinsert!")
-  vim.keymap.set("i", "<Esc>", function() vim.cmd("stopinsert"); cancel() end, km)
-  vim.keymap.set("i", "<CR>", function() vim.cmd("stopinsert"); select() end, km)
-  vim.keymap.set("i", "<C-s>", function() vim.cmd("stopinsert"); select() end, km)
-  vim.keymap.set("i", "<C-q>", function() vim.cmd("stopinsert"); cancel() end, km)
-  -- search input: capture typed characters
-  vim.keymap.set("i", "<BS>", function()
-    search_text = search_text:sub(1, -2)
-    apply_filter()
-    render()
-    -- keep cursor at end of search line
-    local line = vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]
-    vim.api.nvim_win_set_cursor(win, { 1, #line })
-  end, km)
-  vim.keymap.set("i", "<C-h>", function()
-    search_text = search_text:sub(1, -2)
-    apply_filter()
-    render()
-    local line = vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]
-    vim.api.nvim_win_set_cursor(win, { 1, #line })
-  end, km)
-  -- any printable char → search
-  for i = 32, 126 do
-    local c = string.char(i)
-    if c ~= "<" and c ~= "/" and c ~= "\\" then
-      vim.keymap.set("i", c, function()
-        search_text = search_text .. c
-        apply_filter()
-        render()
-        local line = vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]
-        vim.api.nvim_win_set_cursor(win, { 1, #line })
-      end, km)
-    end
-  end
-  -- arrow keys in insert mode for list navigation
-  vim.keymap.set("i", "<C-j>", function() vim.cmd("stopinsert"); move(1) end, km)
-  vim.keymap.set("i", "<C-k>", function() vim.cmd("stopinsert"); move(-1) end, km)
-  vim.keymap.set("i", "<Down>", function() vim.cmd("stopinsert"); move(1) end, km)
-  vim.keymap.set("i", "<Up>", function() vim.cmd("stopinsert"); move(-1) end, km)
+  -- i → back to insert mode (search)
+  vim.keymap.set("n", "i", to_insert, km)
+  -- / → focus search (clear and enter insert)
+  vim.keymap.set("n", "/", function() search_text = ""; apply_filter(); to_insert() end, km)
 
+  -- start in insert mode
+  to_insert()
   render()
 end
 
