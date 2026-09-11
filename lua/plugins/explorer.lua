@@ -17,6 +17,7 @@ return {
 
                   -- `a` — create relative to cursor (folder → inside it, file → same dir)
                   ["a"] = function(picker)
+                    if not picker then return end
                     local Actions = require("snacks.explorer.actions")
                     local Tree = require("snacks.explorer.tree")
                     local base = picker:dir()
