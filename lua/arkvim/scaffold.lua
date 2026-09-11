@@ -533,6 +533,209 @@ gen.php_cli = function(target, name)
   return "PHP CLI 已生成"
 end
 
+-- ===== TypeScript / JavaScript =====
+gen.ts_node = function(target, name)
+  local t = project_tokens(name)
+  write_tree(target, {
+    ["package.json"] = fill('{"name":"{{kebab}}","version":"1.0.0","scripts":{"dev":"tsx watch src/index.ts","build":"tsc","start":"node dist/index.ts"},"devDependencies":{"tsx":"^4","typescript":"^5","@types/node":"^20"},"dependencies":{}}\n', t),
+    ["tsconfig.json"] = '{\n  "compilerOptions": {\n    "target": "ES2022", "module": "Node16", "moduleResolution": "Node16",\n    "outDir": "dist", "rootDir": "src", "strict": true, "esModuleInterop": true\n  },\n  "include": ["src"]\n}\n',
+    ["src/index.ts"] = fill('console.log("Hello from {{NAME}}!")\n', t),
+    [".gitignore"] = "node_modules/\ndist/\n",
+  })
+  return "Node.js (TypeScript) 已生成"
+end
+
+gen.express = function(target, name)
+  local t = project_tokens(name)
+  write_tree(target, {
+    ["package.json"] = fill('{"name":"{{kebab}}","version":"1.0.0","scripts":{"dev":"tsx watch src/index.ts","build":"tsc","start":"node dist/index.ts"},"dependencies":{"express":"^4"},"devDependencies":{"tsx":"^4","typescript":"^5","@types/express":"^4","@types/node":"^20"}}\n', t),
+    ["tsconfig.json"] = '{\n  "compilerOptions": {\n    "target": "ES2022", "module": "Node16", "moduleResolution": "Node16",\n    "outDir": "dist", "rootDir": "src", "strict": true, "esModuleInterop": true\n  },\n  "include": ["src"]\n}\n',
+    ["src/index.ts"] = fill('import express from "express"\nconst app = express()\napp.get("/", (_req, res) => res.json({ message: "Hello from {{NAME}}!" }))\napp.listen(3000, () => console.log("http://localhost:3000"))\n', t),
+    [".gitignore"] = "node_modules/\ndist/\n",
+  })
+  return "Express (TypeScript) 已生成"
+end
+
+gen.react_vite = function(target, name)
+  local t = project_tokens(name)
+  write_tree(target, {
+    ["package.json"] = fill('{"name":"{{kebab}}","private":true,"type":"module","scripts":{"dev":"vite","build":"tsc && vite build","preview":"vite preview"},"dependencies":{"react":"^18","react-dom":"^18"},"devDependencies":{"@types/react":"^18","@types/react-dom":"^18","@vitejs/plugin-react":"^4","typescript":"^5","vite":"^5"}}\n', t),
+    ["index.html"] = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>\n',
+    ["vite.config.ts"] = 'import { defineConfig } from "vite"\nimport react from "@vitejs/plugin-react"\nexport default defineConfig({ plugins: [react()] })\n',
+    ["tsconfig.json"] = '{\n  "compilerOptions": {\n    "target": "ES2020", "module": "ESNext", "moduleResolution": "bundler",\n    "jsx": "react-jsx", "strict": true, "esModuleInterop": true\n  },\n  "include": ["src"]\n}\n',
+    ["src/main.tsx"] = 'import React from "react"\nimport ReactDOM from "react-dom/client"\nimport App from "./App"\nReactDOM.createRoot(document.getElementById("root")!).render(<App />)\n',
+    ["src/App.tsx"] = fill('export default function App() { return <h1>Hello from {{NAME}}!</h1> }\n', t),
+    [".gitignore"] = "node_modules/\ndist/\n",
+  })
+  return "React + Vite 已生成"
+end
+
+gen.nextjs = function(target, name)
+  local t = project_tokens(name)
+  write_tree(target, {
+    ["package.json"] = fill('{"name":"{{kebab}}","version":"1.0.0","scripts":{"dev":"next dev","build":"next build","start":"next start"},"dependencies":{"next":"^14","react":"^18","react-dom":"^18"},"devDependencies":{"@types/node":"^20","@types/react":"^18","typescript":"^5"}}\n', t),
+    ["tsconfig.json"] = '{\n  "compilerOptions": {\n    "target": "ES2017", "lib": ["dom", "dom.iterable", "esnext"],\n    "allowJs": true, "skipLibCheck": true, "strict": true,\n    "noEmit": true, "esModuleInterop": true, "module": "esnext",\n    "moduleResolution": "bundler", "resolveJsonModule": true,\n    "isolatedModules": true, "jsx": "preserve", "incremental": true\n  },\n  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]\n}\n',
+    ["next.config.js"] = '/** @type {import("next").NextConfig} */\nconst nextConfig = {}\nmodule.exports = nextConfig\n',
+    ["app/layout.tsx"] = fill('export default function RootLayout({ children }: { children: React.ReactNode }) {\n  return (<html lang="zh-CN"><body>{children}</body></html>)\n}\n', t),
+    ["app/page.tsx"] = fill('export default function Home() { return <h1>Hello from {{NAME}}!</h1> }\n', t),
+    [".gitignore"] = "node_modules/\n.next/\n",
+  })
+  return "Next.js 已生成"
+end
+
+gen.vue = function(target, name)
+  local t = project_tokens(name)
+  write_tree(target, {
+    ["package.json"] = fill('{"name":"{{kebab}}","private":true,"type":"module","scripts":{"dev":"vite","build":"vue-tsc && vite build","preview":"vite preview"},"dependencies":{"vue":"^3"},"devDependencies":{"@vitejs/plugin-vue":"^5","typescript":"^5","vite":"^5","vue-tsc":"^2"}}\n', t),
+    ["index.html"] = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body><div id="app"></div><script type="module" src="/src/main.ts"></script></body></html>\n',
+    ["vite.config.ts"] = 'import { defineConfig } from "vite"\nimport vue from "@vitejs/plugin-vue"\nexport default defineConfig({ plugins: [vue()] })\n',
+    ["tsconfig.json"] = '{\n  "compilerOptions": {\n    "target": "ES2020", "module": "ESNext", "moduleResolution": "bundler",\n    "strict": true, "jsx": "preserve", "esModuleInterop": true\n  },\n  "include": ["src/**/*.ts", "src/**/*.vue"]\n}\n',
+    ["src/main.ts"] = 'import { createApp } from "vue"\nimport App from "./App.vue"\ncreateApp(App).mount("#app")\n',
+    ["src/App.vue"] = fill('<script setup lang="ts"></script>\n<template>\n  <h1>Hello from {{NAME}}!</h1>\n</template>\n', t),
+    [".gitignore"] = "node_modules/\ndist/\n",
+  })
+  return "Vue + Vite 已生成"
+end
+
+gen.angular = function(target, name)
+  local t = project_tokens(name)
+  write_tree(target, {
+    ["package.json"] = fill('{"name":"{{kebab}}","version":"1.0.0","scripts":{"ng":"ng","start":"ng serve","build":"ng build","test":"ng test"},"dependencies":{"@angular/animations":"^17","@angular/common":"^17","@angular/compiler":"^17","@angular/core":"^17","@angular/forms":"^17","@angular/platform-browser":"^17","@angular/platform-browser-dynamic":"^17","@angular/router":"^17","rxjs":"~7.8","tslib":"^2.3","zone.js":"~0.14"},"devDependencies":{"@angular-devkit/build-angular":"^17","@angular/cli":"^17","typescript":"~5.3"}}\n', t),
+    ["angular.json"] = '{\n  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",\n  "version": 1,\n  "newProjectRoot": "projects",\n  "projects": {\n    "' .. t.kebab .. '": {\n      "projectType": "application",\n      "root": "",\n      "sourceRoot": "src",\n      "prefix": "app",\n      "architect": {\n        "build": {\n          "builder": "@angular-devkit/build-angular:application",\n          "options": {\n            "outputPath": "dist/' .. t.kebab .. '",\n            "index": "src/index.html",\n            "browser": "src/main.ts",\n            "polyfills": ["zone.js"],\n            "tsConfig": "tsconfig.app.json"\n          }\n        },\n        "serve": {\n          "builder": "@angular-devkit/build-angular:dev-server"\n        }\n      }\n    }\n  }\n}\n',
+    ["tsconfig.json"] = '{\n  "compileOnSave": false,\n  "compilerOptions": {\n    "baseUrl": "./",\n    "outDir": "./dist/out-tsc",\n    "forceConsistentCasingInFileNames": true,\n    "strict": true,\n    "noImplicitOverride": true,\n    "noPropertyAccessFromIndexSignature": true,\n    "noImplicitReturns": true,\n    "noFallthroughCasesInSwitch": true,\n    "sourceMap": true,\n    "declaration": false,\n    "downlevelIteration": true,\n    "experimentalDecorators": true,\n    "moduleResolution": "node",\n    "importHelpers": true,\n    "target": "ES2022",\n    "module": "ES2022",\n    "useDefineForClassFields": false,\n    "lib": ["ES2022", "dom"]\n  },\n  "angularCompilerOptions": {\n    "enableI18nLegacyMessageIdFormat": false,\n    "strictInjectionParameters": true,\n    "strictInputAccessModifiers": true,\n    "strictTemplates": true\n  }\n}\n',
+    ["src/index.html"] = '<!doctype html>\n<html lang="zh-CN"><head><meta charset="utf-8"><title>' .. t.name .. '</title><base href="/"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><app-root></app-root></body></html>\n',
+    ["src/main.ts"] = 'import { bootstrapApplication } from "@angular/platform-browser"\nimport { AppComponent } from "./app/app.component"\nbootstrapApplication(AppComponent).catch(err => console.error(err))\n',
+    ["src/app/app.component.ts"] = fill('import { Component } from "@angular/core"\n@Component({\n  selector: "app-root",\n  standalone: true,\n  template: `<h1>Hello from {{NAME}}!</h1>`\n})\nexport class AppComponent {}\n', t),
+    [".gitignore"] = "node_modules/\ndist/\n",
+  })
+  return "Angular 已生成"
+end
+
+gen.sveltekit = function(target, name)
+  local t = project_tokens(name)
+  write_tree(target, {
+    ["package.json"] = fill('{"name":"{{kebab}}","version":"1.0.0","type":"module","scripts":{"dev":"vite dev","build":"vite build","preview":"vite preview"},"dependencies":{"@sveltejs/kit":"^2","svelte":"^4","vite":"^5"}}\n', t),
+    ["svelte.config.js"] = 'import adapter from "@sveltejs/adapter-auto"\n\n/** @type {import("@sveltejs/kit").Config} */\nconst config = {\n  kit: {\n    adapter: adapter()\n  }\n}\n\nexport default config\n',
+    ["vite.config.js"] = 'import { sveltekit } from "@sveltejs/kit/vite"\nimport { defineConfig } from "vite"\nexport default defineConfig({ plugins: [sveltekit()] })\n',
+    ["src/app.html"] = '<!DOCTYPE html>\n<html lang="zh-CN">\n<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">%sveltekit.head%</head>\n<body><div style="display:contents">%sveltekit.body%</div></body>\n</html>\n',
+    ["src/routes/+page.svelte"] = fill('<h1>Hello from {{NAME}}!</h1>\n', t),
+    [".gitignore"] = "node_modules/\n.svelte-kit/\nbuild/\n",
+  })
+  return "SvelteKit 已生成"
+end
+
+gen.hono = function(target, name)
+  local t = project_tokens(name)
+  write_tree(target, {
+    ["package.json"] = fill('{"name":"{{kebab}}","version":"1.0.0","type":"module","scripts":{"dev":"bun run src/index.ts","build":"bun build src/index.ts --outdir dist","start":"bun dist/index.ts"},"dependencies":{"hono":"^4"},"devDependencies":{"bun-types":"latest","typescript":"^5"}}\n', t),
+    ["tsconfig.json"] = '{\n  "compilerOptions": {\n    "target": "ESNext", "module": "ESNext", "moduleResolution": "bundler",\n    "strict": true, "esModuleInterop": true, "types": ["bun-types"]\n  },\n  "include": ["src"]\n}\n',
+    ["src/index.ts"] = fill('import { Hono } from "hono"\nimport { serve } from "bun"\n\nconst app = new Hono()\napp.get("/", (c) => c.json({ message: "Hello from {{NAME}}!" }))\n\nserve({ fetch: app.fetch, port: 3000 }, (info) => {\n  console.log(`Server is running on http://localhost:${info.port}`)\n})\n', t),
+    [".gitignore"] = "node_modules/\ndist/\n",
+  })
+  return "Hono (Bun) 已生成"
+end
+
+gen.nuxt = function(target, name)
+  local t = project_tokens(name)
+  write_tree(target, {
+    ["package.json"] = fill('{"name":"{{kebab}}","version":"1.0.0","private":true,"scripts":{"dev":"nuxt dev","build":"nuxt build","preview":"nuxt preview","generate":"nuxt generate"},"dependencies":{"nuxt":"^3","vue":"^3","vue-router":"^4"}}\n', t),
+    ["nuxt.config.ts"] = 'export default defineNuxtConfig({\n  devtools: { enabled: true },\n  compatibilityDate: "2024-11-01"\n})\n',
+    ["app.vue"] = fill('<template>\n  <h1>Hello from {{NAME}}!</h1>\n</template>\n', t),
+    [".gitignore"] = "node_modules/\n.nuxt/\ndist/\n",
+  })
+  return "Nuxt 已生成"
+end
+
+gen.typer = function(target, name)
+  local t = project_tokens(name)
+  write_tree(target, {
+    ["pyproject.toml"] = fill('[build-system]\nrequires = ["hatchling"]\nbuild-backend = "hatchling.build"\n\n[project]\nname = "{{kebab}}"\nversion = "0.1.0"\nrequires-python = ">=3.10"\ndependencies = ["typer[all]>=0.9"]\n\n[project.scripts]\n{{kebab}} = "{{snake}}.main:app"\n', t),
+    ["src/" .. t.snake .. "/__init__.py"] = '__version__ = "0.1.0"\n',
+    ["src/" .. t.snake .. "/main.py"] = fill('import typer\napp = typer.Typer()\n@app.command()\ndef main(name: str = "World"): print(f"Hello from {{NAME}}, {name}!")\nif __name__ == "__main__": app()\n', t),
+    [".gitignore"] = ".venv/\n__pycache__/\n*.egg-info/\n",
+  })
+  return "Typer CLI 已生成"
+end
+
+gen.rocket = function(target, name)
+  local t = project_tokens(name)
+  write_tree(target, {
+    ["Cargo.toml"] = fill('[package]\nname = "{{kebab}}"\nedition = "2021"\n\n[dependencies]\nrocket = "0.5"\n', t),
+    ["src/main.rs"] = fill('#[macro_use] extern crate rocket\n\n#[get("/")] fn index() -> String { "Hello from {{NAME}}!".to_string() }\n\n#[launch] fn rocket() -> _ { rocket::build().mount("/", routes![index]) }\n', t),
+    [".gitignore"] = "target/\n",
+  })
+  return "Rocket (Rust) 已生成"
+end
+
+gen.leptos = function(target, name)
+  local t = project_tokens(name)
+  write_tree(target, {
+    ["Cargo.toml"] = fill('[package]\nname = "{{kebab}}"\nedition = "2021"\n\n[dependencies]\nleptos = { version = "0.6", features = [] }\nleptos_actix = { version = "0.6", optional = true }\nleptos_router = { version = "0.6", features = [] }\n', t),
+    ["src/main.rs"] = fill('use leptos::*;\n\n#[component]\nfn App() -> impl IntoView {\n  view! { <h1>"Hello from {{NAME}}!"</h1> }\n}\n\nfn main() {\n  mount_to_body(|| view! { <App/> });\n}\n', t),
+    [".gitignore"] = "target/\n",
+  })
+  return "Leptos (Rust WASM) 已生成"
+end
+
+gen.echo = function(target, name)
+  local t = project_tokens(name)
+  write_tree(target, {
+    ["go.mod"] = fill('module {{kebab}}\n\ngo 1.22\n\nrequire github.com/labstack/echo/v4 v4.12.0\n', t),
+    ["main.go"] = fill('package main\n\nimport (\n\t"net/http"\n\t"github.com/labstack/echo/v4"\n)\n\nfunc main() {\n\te := echo.New()\n\te.GET("/", func(c echo.Context) error {\n\t\treturn c.JSON(http.StatusOK, map[string]string{"message": "Hello from {{NAME}}!"})\n\t})\n\te.Logger.Fatal(e.Start(":3000"))\n}\n', t),
+    [".gitignore"] = "",
+  })
+  return "Echo (Go) 已生成"
+end
+
+gen.quarkus = function(target, name)
+  local t = project_tokens(name)
+  write_tree(target, {
+    ["pom.xml"] = fill([[
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>{{kebab}}</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <properties>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
+    <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
+    <quarkus.platform.version>3.8.0</quarkus.platform.version>
+  </properties>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>${quarkus.platform.group-id}</groupId>
+        <artifactId>${quarkus.platform.artifact-id}</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+  <dependencies>
+    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-rest</artifactId></dependency>
+    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-junit5</artifactId><scope>test</scope></dependency>
+  </dependencies>
+  <build><plugins>
+    <plugin><groupId>io.quarkus</groupId><artifactId>quarkus-maven-plugin</artifactId>
+      <version>${quarkus.platform.version}</version>
+      <executions><execution><goals><goal>build</goal><goal>generate-code</goal><goal>generate-code-tests</goal></goals></execution></executions>
+    </plugin>
+  </plugins></build>
+</project>]], t),
+    ["src/main/java/com/example/" .. t.snake .. "/GreetingResource.java"] = fill('package com.example.{{snake}};\n\nimport jakarta.ws.rs.GET;\nimport jakarta.ws.rs.Path;\nimport jakarta.ws.rs.Produces;\nimport jakarta.ws.rs.core.MediaType;\n\n@Path("/hello")\npublic class GreetingResource {\n    @GET\n    @Produces(MediaType.APPLICATION_JSON)\n    public String hello() {\n        return "{\"message\": \"Hello from {{NAME}}!\"}";\n    }\n}\n', t),
+    ["src/main/resources/application.yml"] = "quarkus:\n  http:\n    port: 8080\n",
+    [".gitignore"] = "target/\n*.class\n*.jar\n.idea/\n*.iml\n",
+  })
+  return "Quarkus (Java) 已生成"
+end
+
 -- ===== CSS =====
 gen.tailwind = function(target, name)
   local t = project_tokens(name)
@@ -574,6 +777,7 @@ end
 M.frameworks = {
   -- Java
   { label = "Spring Boot (Java)",        lang = "java",       gen = gen.springboot, main = "pom.xml" },
+  { label = "Quarkus (Java)",            lang = "java",       gen = gen.quarkus,    main = "pom.xml" },
   { label = "Java CLI (javac)",           lang = "java",       gen = gen.javacli,    main = "" },
   -- Kotlin
   { label = "Kotlin CLI",                lang = "kotlin",     gen = gen.kotlin_cli, main = "" },
@@ -587,24 +791,32 @@ M.frameworks = {
   { label = "Go module",                 lang = "go",         gen = gen.gomod,      main = "main.go" },
   { label = "Go + Gin (Web)",            lang = "go",         gen = gen.gin,        main = "main.go" },
   { label = "Go + Fiber (Web)",          lang = "go",         gen = gen.fiber,      main = "main.go" },
+  { label = "Go + Echo (Web)",           lang = "go",         gen = gen.echo,       main = "main.go" },
   -- Rust
   { label = "Rust + Cargo",              lang = "rust",       gen = gen.cargo,      main = "src/main.rs" },
   { label = "Rust + Actix (Web)",        lang = "rust",       gen = gen.actix,      main = "src/main.rs" },
   { label = "Rust + Axum (Web)",         lang = "rust",       gen = gen.axum,       main = "src/main.rs" },
+  { label = "Rust + Rocket (Web)",       lang = "rust",       gen = gen.rocket,     main = "src/main.rs" },
+  { label = "Rust + Leptos (WASM)",      lang = "rust",       gen = gen.leptos,     main = "src/main.rs" },
   -- Python
   { label = "Python package",            lang = "python",     gen = gen.py_pkg,     main = "" },
   { label = "FastAPI (Python)",          lang = "python",     gen = gen.fastapi,    main = "app/main.py" },
   { label = "Django (Python)",           lang = "python",     gen = gen.django,     main = "" },
   { label = "Flask (Python)",            lang = "python",     gen = gen.flask,      main = "app.py" },
+  { label = "Typer CLI (Python)",        lang = "python",     gen = gen.typer,      main = "" },
   -- Dart
   { label = "Dart CLI",                  lang = "dart",       gen = gen.dart_cli,   main = "bin/main.dart" },
   { label = "Flutter (Dart)",            lang = "dart",       gen = gen.flutter,    main = "lib/main.dart" },
   -- TypeScript / JavaScript
   { label = "Node.js (TypeScript)",      lang = "typescript", gen = gen.ts_node,    main = "src/index.ts" },
   { label = "Express + TypeScript",      lang = "typescript", gen = gen.express,    main = "src/index.ts" },
+  { label = "Hono (Bun)",               lang = "typescript", gen = gen.hono,       main = "src/index.ts" },
   { label = "React + Vite (TS)",         lang = "typescript", gen = gen.react_vite, main = "" },
   { label = "Next.js (TS)",             lang = "typescript", gen = gen.nextjs,     main = "" },
   { label = "Vue + Vite (TS)",          lang = "typescript", gen = gen.vue,        main = "" },
+  { label = "Nuxt (Vue SSR)",           lang = "typescript", gen = gen.nuxt,       main = "" },
+  { label = "Angular (TS)",             lang = "typescript", gen = gen.angular,    main = "" },
+  { label = "SvelteKit (TS)",           lang = "typescript", gen = gen.sveltekit,  main = "" },
   -- PHP
   { label = "Laravel (PHP)",             lang = "php",        gen = gen.laravel,    main = "" },
   { label = "PHP CLI",                   lang = "php",        gen = gen.php_cli,    main = "src/Main.php" },
@@ -620,16 +832,16 @@ M.frameworks = {
 -- selection window with search + grouped list
 -- ---------------------------------------------------------------------------
 
-local LIST_HEIGHT = 14
-local WIN_WIDTH = 50
+local LIST_HEIGHT = 30
+local WIN_WIDTH = 55
 local SEARCH_HEIGHT = 1
 local ns = vim.api.nvim_create_namespace("arkvim_picker")
 
 local function sort_frameworks()
   local lang_order = {
-    c = 1, cpp = 2, dart = 3, devops = 4, go = 5, html = 6,
-    java = 7, kotlin = 8, php = 9, python = 10, rust = 11,
-    typescript = 12, css = 13,
+    java = 1, kotlin = 2, c = 3, cpp = 4, go = 5, rust = 6,
+    python = 7, dart = 8, typescript = 9, php = 10, css = 11,
+    html = 12, devops = 13,
   }
   table.sort(M.frameworks, function(a, b)
     local la = lang_order[a.lang] or 99
