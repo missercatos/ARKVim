@@ -22,41 +22,127 @@ local function mac_temp_script(lines)
   vim.fn.jobstart({ "open", tmp }, { detach = true })
 end
 
+local function detect_current_terminal()
+  -- 1) TERM_PROGRAM (set by most GUI terminals when nvim runs inside them)
+  local tp = os.getenv("TERM_PROGRAM")
+  if tp and tp ~= "" then return tp:lower() end
+
+  -- 2) tmux / screen
+  if os.getenv("TMUX") then return "tmux" end
+  if os.getenv("STY") then return "screen" end
+
+  -- 3) parent process name (covers kitty -e, alacritty, etc.)
+  local ppid = tostring(vim.fn.getppid())
+  local stat = vim.fn.readfile("/proc/" .. ppid .. "/comm")
+  if stat and #stat > 0 then return stat[1]:lower():gsub("%s+", "") end
+
+  return nil
+end
+
 local function open_external_terminal(dir)
-  if vim.fn.has("mac") == 1 then
-    mac_temp_script({ "cd " .. vim.fn.shellescape(dir), "exec " .. detect_shell() })
+  local cur = detect_current_terminal()
+  local shell = detect_shell()
+
+  -- ── tmux: new pane / window ──
+  if cur == "tmux" then
+    vim.fn.jobstart({ "tmux", "split-window", "-c", dir, "-l", "40%" }, { detach = true })
     return
   end
-  local terms = {
-    { "gnome-terminal", "--working-directory=" .. dir },
-    { "konsole", "--workdir", dir },
-    { "alacritty", "--working-directory", dir },
-    { "kitty", "--directory", dir },
-    { "wezterm", "--working-directory", dir },
-    { "xfce4-terminal", "--working-directory", dir },
-    { "lxterminal", "--working-directory=" .. dir },
-    { "foot", "--working-directory", dir },
-    { "urxvt", "-cd", dir },
-    { "st", "-e", "cd", dir, ";", vim.o.shell },
-    { "terminator", "--working-directory", dir },
-    { "tilix", "--working-directory", dir },
-    { "xterm", "-e", vim.o.shell, "-c", "cd " .. vim.fn.shellescape(dir) .. " && exec " .. vim.o.shell },
+  if cur == "screen" then
+    vim.fn.jobstart({ "screen", "-S", "arkvim-" .. vim.fn.tempname():sub(-6), "-d", "-m", "-r" }, { detach = true })
+    return
+  end
+
+  -- ── Windows terminals ──
+  if vim.fn.has("win32") == 1 or (cur and cur:find("windows%-terminal")) then
+    if cur and cur:find("powershell") then
+      vim.fn.jobstart({ "powershell", "-NoExit", "-Command", "Set-Location '" .. dir .. "'" }, { detach = true })
+      return
+    end
+    if cur and cur:find("cmd") then
+      vim.fn.jobstart({ "cmd", "/K", "cd /d " .. dir }, { detach = true })
+      return
+    end
+    if cur and cur:find("git%-bash") then
+      vim.fn.jobstart({ "bash", "--login", "-c", "cd " .. vim.fn.shellescape(dir) .. " && exec " .. shell }, { detach = true })
+      return
+    end
+    -- Windows Terminal / generic: spawn same terminal type
+    if vim.fn.executable("wt") == 1 then
+      vim.fn.jobstart({ "wt", "-d", dir }, { detach = true })
+      return
+    end
+    -- PowerShell fallback
+    vim.fn.jobstart({ "powershell", "-NoExit", "-Command", "Set-Location '" .. dir .. "'" }, { detach = true })
+    return
+  end
+
+  -- ── macOS terminals ──
+  if vim.fn.has("mac") == 1 then
+    if cur == "iterm" or cur == "iterm2" then
+      mac_temp_script({ "cd " .. vim.fn.shellescape(dir), "exec " .. shell })
+      return
+    end
+    if cur and cur:find("apple%-terminal") then
+      mac_temp_script({ "cd " .. vim.fn.shellescape(dir), "exec " .. shell })
+      return
+    end
+    -- iTerm2 CLI (works even when nvim not in iTerm)
+    if vim.fn.executable("iterm2") == 1 then
+      vim.fn.jobstart({ "iterm2", "--open-in", dir }, { detach = true })
+      return
+    end
+    -- Fallback: Terminal.app via osascript
+    mac_temp_script({ "cd " .. vim.fn.shellescape(dir), "exec " .. shell })
+    return
+  end
+
+  -- ── Linux: spawn same terminal type ──
+  local term_cmds = {
+    ["kitty"]        = { "kitty", "--directory", dir },
+    ["alacritty"]    = { "alacritty", "--working-directory", dir },
+    ["wezterm"]      = { "wezterm", "start", "--cwd", dir },
+    ["foot"]         = { "foot", "--working-directory", dir },
+    ["st"]           = { "st", "-e", "cd", dir, "&&", shell },
+    ["urxvt"]        = { "urxvt", "-cd", dir },
+    ["xterm"]        = { "xterm", "-e", "cd " .. vim.fn.shellescape(dir) .. " && " .. shell },
+    ["terminator"]   = { "terminator", "--working-directory", dir },
+    ["tilix"]        = { "tilix", "--working-directory", dir },
+    ["lxterminal"]   = { "lxterminal", "--working-directory=" .. dir },
+    ["xfce4-terminal"] = { "xfce4-terminal", "--working-directory=" .. dir },
+    ["gnome-terminal"] = { "gnome-terminal", "--working-directory=" .. dir },
+    ["konsole"]      = { "konsole", "--workdir", dir },
   }
-  for _, t in ipairs(terms) do
+  if cur and term_cmds[cur] then
+    vim.fn.jobstart(term_cmds[cur], { detach = true })
+    return
+  end
+
+  -- ── Fallback: try known terminals by executable ──
+  local fallbacks = {
+    { "kitty",        { "kitty", "--directory", dir } },
+    { "alacritty",    { "alacritty", "--working-directory", dir } },
+    { "wezterm",      { "wezterm", "start", "--cwd", dir } },
+    { "foot",         { "foot", "--working-directory", dir } },
+    { "gnome-terminal", { "gnome-terminal", "--working-directory=" .. dir } },
+    { "konsole",      { "konsole", "--workdir", dir } },
+    { "xfce4-terminal", { "xfce4-terminal", "--working-directory=" .. dir } },
+    { "lxterminal",   { "lxterminal", "--working-directory=" .. dir } },
+    { "xterm",        { "xterm", "-e", shell } },
+    { "x-terminal-emulator", { "x-terminal-emulator" } },
+  }
+  for _, t in ipairs(fallbacks) do
     if vim.fn.executable(t[1]) == 1 then
-      vim.fn.jobstart(t, { detach = true })
+      vim.fn.jobstart(t[2], { detach = true })
       return
     end
   end
-  if vim.fn.executable("x-terminal-emulator") == 1 then
-    vim.fn.jobstart({ "x-terminal-emulator" }, { detach = true })
-    return
-  end
+
   vim.notify("找不到可用的终端模拟器", vim.log.levels.WARN)
 end
 
 -- 在下方打开终端（当前文件所在目录）
-map("n", "<leader>t", function()
+map("n", "<leader>ft", function()
   local dir = vim.fn.expand("%:p:h")
   Snacks.terminal(nil, {
     cwd = dir,
@@ -67,8 +153,8 @@ map("n", "<leader>t", function()
   })
 end, { desc = "Terminal below" })
 
--- External terminal (auto-detect)
-map("n", "<leader>T", function()
+-- External terminal (spawn same terminal type as current)
+map("n", "<leader>fT", function()
   open_external_terminal(vim.fn.expand("%:p:h"))
 end, { desc = "Terminal (external)" })
 
