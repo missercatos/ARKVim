@@ -678,16 +678,16 @@ local function framework_picker(callback)
   local function render()
     local visible = math.min(LIST_HEIGHT, #filtered)
 
-    -- search line: simple text, no emoji
+    -- search line
     local search_line = search_text == "" and " " or search_text
     local sep = string.rep("─", WIN_WIDTH - 2)
 
-    -- list lines: original format "> label  (lang)"
+    -- list lines: "> label" for cursor, "  label" for others
     local lines = { search_line, sep }
     for i = scroll_offset + 1, math.min(scroll_offset + visible, #filtered) do
       local f = filtered[i]
       local mark = i == cursor and "> " or "  "
-      lines[#lines + 1] = mark .. f.label .. "  (" .. f.lang .. ")"
+      lines[#lines + 1] = mark .. f.label
     end
     while #lines < SEARCH_HEIGHT + 1 + visible + 1 do
       lines[#lines + 1] = ""
@@ -697,11 +697,12 @@ local function framework_picker(callback)
 
     -- highlights
     vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
+    -- search line
     vim.api.nvim_buf_add_highlight(buf, ns, "Comment", 0, 0, -1)
-    local list_start = SEARCH_HEIGHT + 1
-    local sel_row = list_start + (cursor - scroll_offset)
-    if sel_row >= list_start and sel_row < list_start + visible then
-      vim.api.nvim_buf_add_highlight(buf, ns, "Visual", sel_row, 0, -1)
+    -- cursor line highlight: row = 2 + (cursor - scroll_offset - 1)
+    local hl_row = 1 + (cursor - scroll_offset)
+    if hl_row >= 2 and hl_row < 2 + visible then
+      vim.api.nvim_buf_add_highlight(buf, ns, "Visual", hl_row, 0, -1)
     end
   end
 
