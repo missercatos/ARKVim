@@ -16,7 +16,9 @@ return {
                   ["d"] = false,
 
                   -- `a` — single create relative to cursor
-                  ["a"] = function(picker)
+                  ["a"] = function(_win)
+                    local pickers = Snacks.picker.get({ source = "explorer" })
+                    local picker = pickers and pickers[1]
                     if not picker then return end
                     local Actions = require("snacks.explorer.actions")
                     local Tree = require("snacks.explorer.tree")
@@ -47,7 +49,9 @@ return {
                   end,
 
                   -- `A` — multi-file batch create (floating input)
-                  ["A"] = function(picker)
+                  ["A"] = function(_win)
+                    local pickers = Snacks.picker.get({ source = "explorer" })
+                    local picker = pickers and pickers[1]
                     if not picker then return end
                     local Actions = require("snacks.explorer.actions")
                     local Tree = require("snacks.explorer.tree")
