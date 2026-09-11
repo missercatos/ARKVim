@@ -1,92 +1,7 @@
--- arkvim/build.lua — project-level build/run/test/clean/stop
--- Detects project type from marker files and scaffold metadata.
--- Commands run in a reused Snacks.terminal bottom split.
+-- arkvim/build.lua — project-level build/run/test/clean
+-- Uses arkvim.project for detection. Commands run in Snacks.terminal bottom split.
 
 local M = {}
-
--- ---------------------------------------------------------------------------
--- project detection
--- ---------------------------------------------------------------------------
-
---- Marker files → project type detection order (first match wins)
-local MARKERS = {
-  { file = "pubspec.yaml",    kind = "flutter", check = function(root)
-    local f = io.open(root .. "/pubspec.yaml", "r")
-    if not f then return false end
-    local c = f:read("*a"); f:close()
-    return c:find("flutter", 1, true) ~= nil
-  end},
-  { file = "pubspec.yaml",    kind = "dart",    always = true },
-  { file = "pom.xml",         kind = "spring",  check = function(root)
-    local f = io.open(root .. "/pom.xml", "r")
-    if not f then return false end
-    local c = f:read("*a"); f:close()
-    return c:find("spring%-boot", 1, true) ~= nil
-  end},
-  { file = "pom.xml",         kind = "java",    always = true },
-  { file = "build.gradle.kts", kind = "gradle_kotlin", always = true },
-  { file = "build.gradle",    kind = "gradle",   always = true },
-  { file = "Cargo.toml",      kind = "rust",     always = true },
-  { file = "go.mod",          kind = "go",       always = true },
-  { file = "package.json",    kind = "node",     always = true },
-  { file = "composer.json",   kind = "php",      always = true },
-  { file = "CMakeLists.txt",  kind = "cmake_c",  check = function(root)
-    local f = io.open(root .. "/CMakeLists.txt", "r")
-    if not f then return false end
-    local c = f:read("*a"); f:close()
-    return not c:find("CXX") and not c:find("CXX_STANDARD")
-  end},
-  { file = "CMakeLists.txt",  kind = "cmake_cpp", always = true },
-  { file = "pyproject.toml",  kind = "python",   always = true },
-  { file = "requirements.txt", kind = "python",  always = true },
-  { file = "Makefile",        kind = "makefile", always = true },
-}
-
---- Walk up from `start` looking for marker files, return project root or nil
-local function find_root(start)
-  local dir = start or vim.fn.getcwd()
-  -- try each level up to 20 levels
-  for _ = 1, 20 do
-    for _, m in ipairs(MARKERS) do
-      local path = dir .. "/" .. m.file
-      if vim.fn.filereadable(path) == 1 then
-        if m.check then
-          if m.check(dir) then return dir, m.kind end
-        else
-          return dir, m.kind
-        end
-      end
-    end
-    local parent = vim.fn.fnamemodify(dir, ":h")
-    if parent == dir then break end
-    dir = parent
-  end
-  return nil, nil
-end
-
---- Detect project from current buffer file or cwd
-local function detect()
-  local file = vim.fn.expand("%:p")
-  local start = file ~= "" and vim.fn.fnamemodify(file, ":h") or vim.fn.getcwd()
-  local root, kind = find_root(start)
-  if not root then return nil end
-
-  -- Try scaffold metadata first (exact)
-  local scaffold = require("arkvim.scaffold")
-  local meta = scaffold.load_metadata(root)
-  if meta and meta.lang then
-    return { root = root, lang = meta.lang, kind = meta.kind or kind, label = meta.label, main = meta.main }
-  end
-
-  -- Fallback: infer from marker kind
-  local lang_map = {
-    spring = "java", java = "java", gradle = "java", gradle_kotlin = "java",
-    rust = "rust", go = "go", node = "typescript", php = "php",
-    cmake_c = "c", cmake_cpp = "cpp", python = "python",
-    flutter = "dart", dart = "dart", makefile = "make",
-  }
-  return { root = root, lang = lang_map[kind] or kind, kind = kind, label = kind, main = "" }
-end
 
 -- ---------------------------------------------------------------------------
 -- command tables
@@ -94,7 +9,6 @@ end
 
 local function has(cmd) return vim.fn.executable(cmd) == 1 end
 
---- Returns { build, run, test, clean, stop, main_file? } for a project
 local function commands(proj)
   local k = proj.kind or proj.lang
   local root = proj.root
@@ -105,9 +19,7 @@ local function commands(proj)
     cmds.run    = "cd " .. root .. " && mvn -q spring-boot:run"
     cmds.test   = "cd " .. root .. " && mvn -q test"
     cmds.clean  = "cd " .. root .. " && mvn -q clean"
-    cmds.stop   = nil
     if has("java") then
-      -- find built jar
       local jars = vim.fn.glob(root .. "/target/*.jar", false, true)
       if #jars > 0 then
         cmds.run_alt = "cd " .. root .. " && java -jar " .. vim.fn.shellescape(jars[1])
@@ -115,7 +27,6 @@ local function commands(proj)
     end
   elseif k == "java" then
     if has("javac") and has("java") then
-      local src = root .. "/src"
       cmds.build = "cd " .. root .. " && find src -name '*.java' | xargs javac -d out"
       cmds.run   = "cd " .. root .. " && java -cp out $(find src -name '*.java' | head -1 | sed 's|src/||;s|\\.java||;s|/|.|g')"
       cmds.clean = "cd " .. root .. " && rm -rf out"
@@ -132,7 +43,6 @@ local function commands(proj)
       cmds.run    = "cd " .. root .. " && cargo run"
       cmds.test   = "cd " .. root .. " && cargo test"
       cmds.clean  = "cd " .. root .. " && cargo clean"
-      cmds.stop   = nil
     end
   elseif k == "go" then
     if has("go") then
@@ -143,32 +53,24 @@ local function commands(proj)
     end
   elseif k == "node" then
     if has("npm") then
-      -- parse scripts from package.json
       local f = io.open(root .. "/package.json", "r")
       if f then
         local c = f:read("*a"); f:close()
         local ok, pkg = pcall(vim.fn.json_decode, c)
         if ok and pkg.scripts then
-          if pkg.scripts.build then
-            cmds.build = "cd " .. root .. " && npm run build"
-          end
+          if pkg.scripts.build then cmds.build = "cd " .. root .. " && npm run build" end
           if pkg.scripts.dev then
             cmds.run = "cd " .. root .. " && npm run dev"
           elseif pkg.scripts.start then
             cmds.run = "cd " .. root .. " && npm run start"
           end
-          if pkg.scripts.test then
-            cmds.test = "cd " .. root .. " && npm test"
-          end
+          if pkg.scripts.test then cmds.test = "cd " .. root .. " && npm test" end
         end
       end
       cmds.clean = "cd " .. root .. " && rm -rf node_modules dist .next .output"
     end
   elseif k == "php" then
-    if has("composer") then
-      cmds.build = "cd " .. root .. " && composer install"
-    end
-    -- detect Laravel artisan
+    if has("composer") then cmds.build = "cd " .. root .. " && composer install" end
     if vim.fn.filereadable(root .. "/artisan") == 1 then
       cmds.run   = "cd " .. root .. " && php artisan serve"
       cmds.test  = "cd " .. root .. " && php artisan test"
@@ -190,9 +92,8 @@ local function commands(proj)
     end
   elseif k == "cmake_c" or k == "cmake_cpp" then
     if has("cmake") then
-      cmds.build  = "cd " .. root .. " && cmake -S . -B build && cmake --build build"
-      cmds.clean  = "cd " .. root .. " && rm -rf build"
-      -- find built binary
+      cmds.build = "cd " .. root .. " && cmake -S . -B build && cmake --build build"
+      cmds.clean = "cd " .. root .. " && rm -rf build"
       local bins = vim.fn.glob(root .. "/build/*", false, true)
       for _, b in ipairs(bins) do
         if vim.fn.filereadable(b) == 1 and vim.fn.getfperm(b):find("x") then
@@ -204,9 +105,7 @@ local function commands(proj)
   elseif k == "python" then
     if has("python3") then
       cmds.run   = "cd " .. root .. " && python3 -m " .. (proj.label or "app")
-      if has("pytest") then
-        cmds.test = "cd " .. root .. " && pytest -q"
-      end
+      if has("pytest") then cmds.test = "cd " .. root .. " && pytest -q" end
       cmds.clean = "cd " .. root .. " && find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null; rm -rf .pytest_cache"
     end
   elseif k == "makefile" then
@@ -223,8 +122,6 @@ end
 -- ---------------------------------------------------------------------------
 -- terminal execution
 -- ---------------------------------------------------------------------------
-
-local _term_buf = nil  -- reuse terminal buffer
 
 local function run_in_terminal(cmd)
   if not cmd then
@@ -245,14 +142,12 @@ end
 -- public API
 -- ---------------------------------------------------------------------------
 
---- Get current project info (cached per buffer)
 function M.project()
-  return detect()
+  return require("arkvim.project").current()
 end
 
---- Run an action: build, run, test, clean, stop
 function M.run(action)
-  local proj = detect()
+  local proj = M.project()
   if not proj then
     vim.notify("未检测到项目 (没有找到 marker 文件)", vim.log.levels.WARN)
     return
@@ -262,17 +157,17 @@ function M.run(action)
 end
 
 -- ---------------------------------------------------------------------------
--- dynamic keymap registration
+-- dynamic keymap registration (<leader>B*)
 -- ---------------------------------------------------------------------------
 
 local _registered = false
 local _current_root = nil
 
 local KEYMAP_ACTIONS = {
-  { lhs = "<leader>rb", action = "build", desc = "构建项目" },
-  { lhs = "<leader>rr", action = "run",   desc = "运行项目" },
-  { lhs = "<leader>rt", action = "test",  desc = "测试项目" },
-  { lhs = "<leader>rc", action = "clean", desc = "清理项目" },
+  { lhs = "<leader>Bb", action = "build", desc = "构建项目" },
+  { lhs = "<leader>Br", action = "run",   desc = "运行项目" },
+  { lhs = "<leader>Bt", action = "test",  desc = "测试项目" },
+  { lhs = "<leader>Bc", action = "clean", desc = "清理项目" },
 }
 
 local function register_keymaps()
@@ -281,11 +176,10 @@ local function register_keymaps()
     vim.keymap.set("n", a.lhs, function() M.run(a.action) end,
       { desc = a.desc, silent = true, noremap = true })
   end
-  -- which-key group
   local ok, wk = pcall(require, "which-key")
   if ok then
     wk.add({
-      { "<leader>r", group = "+run/build", mode = "n" },
+      { "<leader>B", group = "+build", mode = "n" },
     })
   end
   _registered = true
@@ -300,7 +194,7 @@ local function unregister_keymaps()
 end
 
 local function refresh()
-  local proj = detect()
+  local proj = M.project()
   local new_root = proj and proj.root or nil
   if new_root ~= _current_root then
     _current_root = new_root
@@ -312,14 +206,12 @@ local function refresh()
   end
 end
 
---- Call once at startup
 function M.setup()
   local grp = vim.api.nvim_create_augroup("arkvim_build", { clear = true })
   vim.api.nvim_create_autocmd({ "BufEnter", "DirChanged" }, {
     group = grp,
     callback = function() vim.schedule(refresh) end,
   })
-  -- initial check
   vim.schedule(refresh)
 end
 

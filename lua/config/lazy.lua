@@ -51,6 +51,9 @@ require("arkvim.modules").setup()
 require("arkvim.api").setup()
 require("arkvim.git").setup()
 require("arkvim.watcher").setup()
+require("arkvim.project")
+require("arkvim.capabilities")
+require("arkvim.hints").setup()
 
 require("lazy").setup({
   spec = spec,

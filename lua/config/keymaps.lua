@@ -351,3 +351,55 @@ for _, a in ipairs(devops_actions) do
   end, { desc = a[3] })
 end
 
+-- UI toggles: smear-cursor / satellite / dropbar
+map("n", "<leader>us", function()
+  local ok, smear = pcall(require, "smear_cursor")
+  if ok then
+    local state = vim.g.smear_cursor_enabled
+    vim.g.smear_cursor_enabled = not state
+    vim.notify(state and "光标拖影: 关" or "光标拖影: 开")
+  else
+    vim.notify("smear-cursor 未加载", vim.log.levels.WARN)
+  end
+end, { desc = "Toggle smear cursor" })
+
+map("n", "<leader>uS", function()
+  local ok = pcall(vim.cmd, "SatelliteToggle")
+  if not ok then vim.notify("satellite 未加载 (首次按需加载)", vim.log.levels.INFO) end
+end, { desc = "Toggle scrollbar" })
+
+map("n", "<leader>uB", function()
+  local ok, dropbar = pcall(require, "dropbar")
+  if ok then
+    local is_on = pcall(vim.api.nvim_buf_get_var, 0, "dropbar_cfgs")
+    if is_on then
+      vim.cmd("DropbarDisable")
+      vim.notify("面包屑: 关")
+    else
+      vim.cmd("DropbarEnable")
+      vim.notify("面包屑: 开")
+    end
+  else
+    vim.notify("dropbar 未加载", vim.log.levels.WARN)
+  end
+end, { desc = "Toggle dropbar breadcrumbs" })
+
+-- Capability hub
+map("n", "<leader>Xh", function()
+  require("arkvim.hints").open()
+end, { desc = "Capability hub" })
+
+-- which-key group registrations for new keymaps
+local ok_wk, wk = pcall(require, "which-key")
+if ok_wk then
+  wk.register({
+    ["<leader>B"] = { name = "+build" },
+    ["<leader>R"] = { name = "+REST" },
+    ["<leader>j"] = { name = "+Jupyter" },
+    ["<leader>X"] = { name = "+production" },
+    ["<leader>A"] = { name = "+AI" },
+    ["<leader>u"] = { name = "+toggle" },
+    ["<leader>c"] = { name = "+code" },
+  })
+end
+
