@@ -42,6 +42,10 @@ C、C++、Rust、Python、Java、JavaScript、TypeScript、HTML、CSS、Dockerfi
 |---|---|
 | `<space>ft` | 内置底部终端（当前文件所在目录） |
 | `<space>fT` | 外部终端窗口（自动检测当前终端类型，开同类型新窗口） |
+| `:TermSplit` | 水平分割打开终端 |
+| `:TermVsplit` | 垂直分割打开终端 |
+| `:TermFloat` | 浮动窗口打开终端 |
+| `:TermClose` | 关闭当前终端 |
 | `<space>k` | 编译并运行当前文件（底部内置终端） |
 | `<space>K` | 编译并运行当前文件（新开外部终端窗口） |
 | `<space>e` / `<space>E` | Snacks 文件树（根目录 / cwd），文件树内删除为 `<space>fd`（File→Delete） |
@@ -111,8 +115,9 @@ C、C++、Rust、Python、Java、JavaScript、TypeScript、HTML、CSS、Dockerfi
 
 ## 兼容性
 
-- **Linux**：完全支持。自动检测 gnome-terminal、konsole、alacritty、kitty、wezterm、xfce4-terminal、lxterminal、foot、urxvt、st、terminator、tilix、xterm 等终端模拟器。
-- **macOS**：支持。外部终端通过 `.command` 临时脚本由 Terminal.app 打开并执行。`<space>fT` 和 `<space>k` 均可正常工作。
+- **Linux**：完全支持。通过 `TERM_PROGRAM` / 父进程检测当前终端类型，自动开同类型新窗口。支持 kitty、alacritty、wezterm、foot、gnome-terminal、konsole、xfce4-terminal、lxterminal、urxvt、st、terminator、tilix、xterm、tmux、screen 等。检测不到时 fallback 按已知终端逐个尝试。
+- **macOS**：支持。检测 iTerm2 / Apple Terminal，通过 `.command` 临时脚本开同类型新窗口。`<space>fT` 和 `<space>k` 均可正常工作。
+- **Windows**：支持。检测 Windows Terminal (wt)、PowerShell、cmd、Git Bash，自动在同类型终端中打开新窗口。
 - **Windows**：未经测试。
 
 ## 配置结构

@@ -31,10 +31,21 @@ local function detect_current_terminal()
   if os.getenv("TMUX") then return "tmux" end
   if os.getenv("STY") then return "screen" end
 
-  -- 3) parent process name (covers kitty -e, alacritty, etc.)
-  local ppid = tostring(vim.fn.getppid())
-  local stat = vim.fn.readfile("/proc/" .. ppid .. "/comm")
-  if stat and #stat > 0 then return stat[1]:lower():gsub("%s+", "") end
+  -- 3) parent process name via /proc (Linux)
+  local ok, stat = pcall(function()
+    local status = vim.fn.readfile("/proc/self/status")
+    for _, line in ipairs(status) do
+      local ppid = line:match("^PPid:%s*(%d+)")
+      if ppid then
+        local comm = vim.fn.readfile("/proc/" .. ppid .. "/comm")
+        if comm and #comm > 0 then
+          return comm[1]:lower():gsub("%s+", "")
+        end
+      end
+    end
+    return nil
+  end)
+  if ok and stat then return stat end
 
   return nil
 end
@@ -297,6 +308,29 @@ map("t", "<C-h>", "<C-\\><C-n><C-w>h", { desc = "Terminal: move left" })
 map("t", "<C-j>", "<C-\\><C-n><C-w>j", { desc = "Terminal: move down" })
 map("t", "<C-k>", "<C-\\><C-n><C-w>k", { desc = "Terminal: move up" })
 map("t", "<C-l>", "<C-\\><C-n><C-w>l", { desc = "Terminal: move right" })
+
+-- : commands for terminal management (no keymap conflicts)
+vim.api.nvim_create_user_command("TermSplit", function()
+  vim.cmd("split")
+  Snacks.terminal(nil, { win = { position = "bottom", height = 0.3 } })
+end, { desc = "Open terminal in horizontal split" })
+
+vim.api.nvim_create_user_command("TermVsplit", function()
+  vim.cmd("vsplit")
+  Snacks.terminal(nil, { win = { position = "right", width = 0.4 } })
+end, { desc = "Open terminal in vertical split" })
+
+vim.api.nvim_create_user_command("TermFloat", function()
+  Snacks.terminal(nil, { win = { position = "float" } })
+end, { desc = "Open terminal in floating window" })
+
+vim.api.nvim_create_user_command("TermClose", function()
+  if vim.bo.buftype == "terminal" then
+    vim.cmd("close")
+  else
+    vim.notify("当前不是终端窗口", vim.log.levels.WARN)
+  end
+end, { desc = "Close current terminal" })
 
 -- One-key project scaffold: pick language -> framework -> name,
 -- the skeleton is created under the current directory.
