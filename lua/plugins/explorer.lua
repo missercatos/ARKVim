@@ -3,8 +3,6 @@
 -- `a`: single file/dir (relative to cursor)
 -- `A`: multi-file batch create (one path per line, relative to cwd)
 
-local Animate = require("arkvim.animate")
-
 local function get_explorer_picker()
   local pickers = Snacks.picker.get({ source = "explorer" })
   return pickers and pickers[1]
@@ -27,8 +25,6 @@ local function create_batch_win(cwd)
     style = "minimal",
     border = "rounded",
   })
-
-  Animate.raw_win(win)
 
   local header = {
     "# 输入文件/目录路径，每行一个",
@@ -61,29 +57,6 @@ local function resize_win(win, buf)
 end
 
 return {
-  -- Animate snacks picker list windows (file tree + others)
-  {
-    "folke/snacks.nvim",
-    event = "VeryLazy",
-    config = function()
-      vim.api.nvim_create_autocmd("BufEnter", {
-        callback = function(ev)
-          local bt = vim.bo[ev.buf].buftype
-          local ft = vim.bo[ev.buf].filetype
-          if ft == "snacks_picker_list" or bt == "nofile" and ft:find("snacks_picker") then
-            local winid = vim.api.nvim_get_current_win()
-            vim.defer_fn(function()
-              if vim.api.nvim_win_is_valid(winid) then
-                Animate.raw_win(winid, { duration = 100 })
-              end
-            end, 10)
-          end
-        end,
-      })
-    end,
-  },
-
-  -- Explorer keys
   {
     "folke/snacks.nvim",
     opts = function(_, opts)
@@ -242,21 +215,6 @@ return {
               },
             },
           },
-        },
-      })
-    end,
-  },
-
-  -- Animate terminal on open
-  {
-    "folke/snacks.nvim",
-    opts = function(_, opts)
-      opts.styles = vim.tbl_deep_extend("force", opts.styles or {}, {
-        terminal = {
-          wo = { winblend = 100 },
-          on_win = function(self)
-            Animate.win(self)
-          end,
         },
       })
     end,
