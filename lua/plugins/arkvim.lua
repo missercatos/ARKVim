@@ -48,7 +48,7 @@ return {
         sections = {
           {
             section = "terminal",
-            cmd = vim.fn.stdpath("config") .. "/lua/arkvim/header.sh",
+            cmd = vim.fn.stdpath("config") .. "/lua/arkvim/header-animate.sh",
             height = 8,
             padding = 0,
             indent = 0,

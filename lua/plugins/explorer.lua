@@ -28,7 +28,6 @@ local function create_batch_win(cwd)
     border = "rounded",
   })
 
-  -- Fade in
   Animate.raw_win(win)
 
   local header = {
@@ -44,20 +43,51 @@ local function create_batch_win(cwd)
   return buf, win
 end
 
+local function resize_win(win, buf)
+  if not vim.api.nvim_win_is_valid(win) then return end
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  local max_w = 0
+  for _, l in ipairs(lines) do
+    max_w = math.max(max_w, #l)
+  end
+  local new_w = math.min(math.max(max_w + 4, 40), vim.o.columns - 4)
+  local new_h = math.min(#lines + 2, vim.o.lines - 4)
+  vim.api.nvim_win_set_config(win, {
+    width = new_w,
+    height = new_h,
+    row = math.floor((vim.o.lines - new_h) / 2),
+    col = math.floor((vim.o.columns - new_w) / 2),
+  })
+end
+
 return {
-  -- Snacks explorer keys + animate on open
+  -- Animate snacks picker list windows (file tree + others)
+  {
+    "folke/snacks.nvim",
+    event = "VeryLazy",
+    config = function()
+      vim.api.nvim_create_autocmd("BufEnter", {
+        callback = function(ev)
+          local bt = vim.bo[ev.buf].buftype
+          local ft = vim.bo[ev.buf].filetype
+          if ft == "snacks_picker_list" or bt == "nofile" and ft:find("snacks_picker") then
+            local winid = vim.api.nvim_get_current_win()
+            vim.defer_fn(function()
+              if vim.api.nvim_win_is_valid(winid) then
+                Animate.raw_win(winid, { duration = 100 })
+              end
+            end, 10)
+          end
+        end,
+      })
+    end,
+  },
+
+  -- Explorer keys
   {
     "folke/snacks.nvim",
     opts = function(_, opts)
-      -- Animate explorer picker on open
       opts.picker = vim.tbl_deep_extend("force", opts.picker or {}, {
-        win = vim.tbl_deep_extend("force", opts.picker and opts.picker.win or {}, {
-          list = {
-            on_win = function(self)
-              Animate.win(self)
-            end,
-          },
-        }),
         sources = {
           explorer = {
             win = {
@@ -66,7 +96,6 @@ return {
                   ["<leader>fd"] = "explorer_del",
                   ["d"] = false,
 
-                  -- `a` — single create relative to cursor
                   ["a"] = function(_win)
                     local picker = get_explorer_picker()
                     if not picker then return end
@@ -98,7 +127,6 @@ return {
                     Actions.update(picker, { target = path })
                   end,
 
-                  -- `A` — multi-file batch create (floating input)
                   ["A"] = function(_win)
                     local picker = get_explorer_picker()
                     if not picker then return end
@@ -147,44 +175,45 @@ return {
                       end
                     end
 
-                    -- Buffer keymaps (work in all modes)
-                    local km_opts = { buffer = buf, silent = true, nowait = true }
-                    vim.keymap.set("n", "<C-s>", do_confirm, km_opts)
-                    vim.keymap.set("i", "<C-s>", function() vim.cmd("stopinsert"); do_confirm() end, km_opts)
-                    vim.keymap.set("n", "q", do_cancel, km_opts)
-                    vim.keymap.set("i", "<C-q>", function() vim.cmd("stopinsert"); do_cancel() end, km_opts)
-                    vim.keymap.set("n", "<Esc>", do_cancel, km_opts)
-                    vim.keymap.set("i", "<Esc>", function() vim.cmd("stopinsert"); do_cancel() end, km_opts)
-
-                    -- Enter in normal mode: new line below and enter insert
+                    local km = { buffer = buf, silent = true, nowait = true }
+                    vim.keymap.set("n", "<Esc>", do_cancel, km)
+                    vim.keymap.set("i", "<Esc>", function() vim.cmd("stopinsert"); do_cancel() end, km)
+                    vim.keymap.set("n", "q", do_cancel, km)
+                    vim.keymap.set("i", "<C-q>", function() vim.cmd("stopinsert"); do_cancel() end, km)
+                    vim.keymap.set("n", "<C-s>", do_confirm, km)
+                    vim.keymap.set("i", "<C-s>", function() vim.cmd("stopinsert"); do_confirm() end, km)
+                    vim.keymap.set("i", "<CR>", function() vim.cmd("stopinsert"); do_confirm() end, km)
+                    vim.keymap.set("i", "<S-CR>", function()
+                      local pos = vim.api.nvim_win_get_cursor(win)
+                      vim.api.nvim_buf_set_lines(buf, pos[1], pos[1], false, { "" })
+                      vim.api.nvim_win_set_cursor(win, { pos[1] + 1, 0 })
+                    end, km)
+                    vim.keymap.set("i", "<C-j>", function()
+                      local pos = vim.api.nvim_win_get_cursor(win)
+                      vim.api.nvim_buf_set_lines(buf, pos[1], pos[1], false, { "" })
+                      vim.api.nvim_win_set_cursor(win, { pos[1] + 1, 0 })
+                    end, km)
                     vim.keymap.set("n", "<CR>", function()
                       local pos = vim.api.nvim_win_get_cursor(win)
-                      local line_count = vim.api.nvim_buf_line_count(buf)
-                      if pos[1] >= line_count then
+                      local lc = vim.api.nvim_buf_line_count(buf)
+                      if pos[1] >= lc then
                         vim.api.nvim_buf_set_lines(buf, -1, -1, false, { "" })
                       else
                         vim.api.nvim_buf_set_lines(buf, pos[1], pos[1], false, { "" })
                       end
                       vim.api.nvim_win_set_cursor(win, { math.min(pos[1] + 1, vim.api.nvim_buf_line_count(buf)), 0 })
                       vim.cmd("startinsert")
-                    end, km_opts)
-
-                    -- Tab completion: path suggestion
+                    end, km)
                     vim.keymap.set("i", "<Tab>", function()
-                      local line = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
                       local row = vim.api.nvim_win_get_cursor(win)[1]
-                      local text = line[row] or ""
-                      if text == "" or text:sub(1, 1) == "#" then
-                        return "<Tab>"
-                      end
-                      -- Try to complete path
-                      local base = cwd .. "/" .. text
-                      local dir = vim.fn.fnamemodify(base, ":h")
-                      local partial = vim.fn.fnamemodify(base, ":t")
+                      local text = (vim.api.nvim_buf_get_lines(buf, row - 1, row, false)[1] or "")
+                      if text == "" or text:sub(1, 1) == "#" then return "<Tab>" end
+                      local base_path = cwd .. "/" .. text
+                      local dir = vim.fn.fnamemodify(base_path, ":h")
+                      local partial = vim.fn.fnamemodify(base_path, ":t")
                       if vim.fn.isdirectory(dir) == 1 then
-                        local entries = vim.fn.readdir(dir)
                         local matches = {}
-                        for _, e in ipairs(entries) do
+                        for _, e in ipairs(vim.fn.readdir(dir)) do
                           if e:find(partial, 1, true) == 1 then
                             table.insert(matches, e)
                           end
@@ -193,20 +222,21 @@ return {
                           local full = dir .. "/" .. matches[1]
                           local is_dir = vim.fn.isdirectory(full) == 1
                           local rel = matches[1] .. (is_dir and "/" or "")
-                          line[row] = text .. rel:sub(#partial + 1)
-                          vim.api.nvim_buf_set_lines(buf, row - 1, row, false, { line[row] })
-                          vim.api.nvim_win_set_cursor(win, { row, #line[row] })
+                          local new_text = text .. rel:sub(#partial + 1)
+                          vim.api.nvim_buf_set_lines(buf, row - 1, row, false, { new_text })
+                          vim.api.nvim_win_set_cursor(win, { row, #new_text })
                         elseif #matches > 1 then
-                          -- Show candidates
                           vim.notify("候选: " .. table.concat(matches, ", "))
                         end
                       end
                       return ""
                     end, { buffer = buf, silent = true, expr = true })
-
-                    -- Ctrl-n/Ctrl-p for candidate selection
                     vim.keymap.set("i", "<C-n>", "<Tab>", { buffer = buf, silent = true, remap = true })
                     vim.keymap.set("i", "<C-p>", "<S-Tab>", { buffer = buf, silent = true, remap = true })
+                    vim.api.nvim_create_autocmd("TextChangedI", {
+                      buffer = buf,
+                      callback = function() resize_win(win, buf) end,
+                    })
                   end,
                 },
               },
