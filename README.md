@@ -45,7 +45,7 @@ C、C++、Rust、Python、Java、JavaScript、TypeScript、HTML、CSS、Dockerfi
 | `<space>k` | 编译并运行当前文件（底部内置终端） |
 | `<space>K` | 编译并运行当前文件（新开外部终端窗口） |
 | `<space>e` / `<space>E` | Snacks 文件树（根目录 / cwd），文件树内删除为 `<space>fd`（File→Delete） |
-| `<space>a` | 新建文件：光标在文件夹上→创建在该文件夹内；在文件上→创建在同一目录；支持输入 `folder/file.ext` 指定路径。自动根据项目语言补后缀。 |
+| `<space>a` | 新建文件：光标在文件夹上→创建在该文件夹内；在文件上→创建在同一目录；支持输入 `/path/file` 指定路径。 |
 | `<space>o` / `<space>O` | oil.nvim 文件管理器（浮动，当前目录 / cwd） |
 | `-` | oil.nvim 打开上级目录（vim-vinegar 风格） |
 | `<space>pc` | **一键创建框架工程**（选语言 → 选模板 → 输入项目名） |
@@ -67,9 +67,7 @@ C、C++、Rust、Python、Java、JavaScript、TypeScript、HTML、CSS、Dockerfi
 | Python | package、FastAPI |
 | DevOps | Docker Compose 栈 |
 
-生成后会自动跳进项目目录（`cd`），设置项目语言变量，并打开工程主文件。项目语言会影响：
-- `<space>a` 新建文件时自动补后缀（Java → `.java`，Python → `.py`，Rust → `.rs` …）
-- `:e newfile`（无后缀）时 BufNewFile 自动追加对应后缀
+生成后会自动跳进项目目录（`cd`）并打开工程主文件。
 
 实现见 `lua/arkvim/scaffold.lua`，添加新模板只需在其 `langs[]` 中注册一个 `gen` 函数。
 

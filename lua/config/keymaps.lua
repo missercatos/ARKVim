@@ -317,38 +317,20 @@ map("n", "<leader>pc", function()
   require("arkvim.scaffold").create()
 end, { desc = "Scaffold project" })
 
--- New file with auto-extension (project language aware)
--- If a scaffold project is active, the appropriate extension is added automatically.
-local _lang_ext = {
-  java = "java", python = "py", rust = "rs", go = "go",
-  c = "c", cpp = "cpp", devops = "yml",
-}
-
+-- New file (simple: just create and open)
 map("n", "<leader>a", function()
-  local lang = vim.g.arkvim_project_lang
   local name = vim.fn.input("新建文件名: ")
   if name == "" then
     return
-  end
-  -- Auto-append extension if lang is set and name has no extension
-  if lang and vim.fn.fnamemodify(name, ":e") == "" then
-    local ext = _lang_ext[lang]
-    if ext then
-      name = name .. "." .. ext
-    end
   end
   local dir = vim.fn.expand("%:p:h")
   if dir == "" then
     dir = vim.fn.getcwd()
   end
   local path = dir .. "/" .. name
-  if vim.fn.filereadable(path) == 1 then
-    vim.cmd("edit " .. vim.fn.fnameescape(path))
-  else
-    vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
-    vim.cmd("edit " .. vim.fn.fnameescape(path))
-  end
-end, { desc = "New file (auto-ext)" })
+  vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
+  vim.cmd("edit " .. vim.fn.fnameescape(path))
+end, { desc = "New file" })
 
 -- Docker / Compose quick actions (bottom built-in terminal)
 -- helpers: lua/arkvim/devops.lua

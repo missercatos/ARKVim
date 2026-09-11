@@ -645,12 +645,6 @@ local function pick(prompt, items, cb)
   end)
 end
 
---- Language -> default file extension map (used by autocmds + <space>a)
-M.lang_ext = {
-  java = "java", python = "py", rust = "rs", go = "go",
-  c = "c", cpp = "cpp", devops = "yml",
-}
-
 function M.create()
   pick("选择语言", M.langs, function(lang)
     pick("选择框架模板 (" .. lang.label .. ")", lang.frameworks, function(tpl)
