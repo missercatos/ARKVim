@@ -808,27 +808,24 @@ local function framework_picker(callback)
 
   local function render()
     local visible = math.min(LIST_HEIGHT, #filtered)
-
-    -- search line
-    local search_line = search_text == "" and " " or search_text
     local sep = string.rep("─", WIN_WIDTH - 2)
 
-    -- list lines: "> label" for cursor, "  label" for others
-    local lines = { search_line, sep }
+    -- update only lines 1+ (sep + list), never touch line 0 (search input)
+    local lines = { sep }
     for i = scroll_offset + 1, math.min(scroll_offset + visible, #filtered) do
       local f = filtered[i]
       local mark = i == cursor and "> " or "  "
       lines[#lines + 1] = mark .. f.label
     end
-    while #lines < SEARCH_HEIGHT + 1 + visible + 1 do
+    while #lines < 1 + visible + 1 do
       lines[#lines + 1] = ""
     end
 
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+    vim.api.nvim_buf_set_lines(buf, 1, -1, false, lines)
 
     -- highlights
     vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
-    -- search line
+    -- search line highlight
     vim.api.nvim_buf_add_highlight(buf, ns, "Comment", 0, 0, -1)
     -- cursor line highlight
     local hl_row = 1 + (cursor - scroll_offset)
@@ -839,16 +836,15 @@ local function framework_picker(callback)
     if search_text ~= "" then
       local q = search_text:lower()
       for i, f in ipairs(filtered) do
-        local row = i - scroll_offset + 1  -- +1 for search line, +1 for sep (0-indexed)
+        local row = i + 1  -- row 0=search, row 1=sep, row 2+=items
         if row >= 2 and row < 2 + visible then
           local label = f.label:lower()
           local start_pos = 1
           while start_pos <= #f.label do
             local s, e = label:find(q, start_pos, true)
             if not s then break end
-            -- convert to byte offset for highlight
-            local byte_start = vim.api.nvim_strwidth(f.label:sub(1, s - 1))
-            local byte_end = byte_start + vim.api.nvim_strwidth(f.label:sub(s, e))
+            local byte_start = vim.fn.byteidx(f.label, s - 1)
+            local byte_end = vim.fn.byteidx(f.label, e - 1) + vim.api.nvim_strwidth(f.label:sub(e, e))
             vim.api.nvim_buf_add_highlight(buf, ns, "Search", row, byte_start, byte_end)
             start_pos = e + 1
           end
@@ -884,66 +880,59 @@ local function framework_picker(callback)
 
   -- keymaps
   local km = { buffer = buf, silent = true, nowait = true, noremap = true }
-  local mode = "insert" -- "insert" or "nav"
 
-  local function to_nav()
-    mode = "nav"
-    vim.cmd("stopinsert!")
-    local row = math.min(cursor - scroll_offset, vim.api.nvim_buf_line_count(buf))
-    pcall(vim.api.nvim_win_set_cursor, win, { row + 1, 0 })
-    render()
-  end
+  -- sync search_text from buffer line 0 on every keystroke in insert mode
+  vim.api.nvim_create_autocmd("TextChangedI", {
+    buffer = buf,
+    callback = function()
+      local first_line = vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] or ""
+      search_text = first_line
+      apply_filter()
+      render()
+    end,
+  })
 
   local function to_insert()
-    mode = "insert"
     vim.cmd("startinsert!")
     pcall(vim.api.nvim_win_set_cursor, win, { 1, vim.api.nvim_strwidth(vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]) })
   end
 
-  -- === insert mode keymaps ===
-  -- type into search (no char mappings needed, Vim handles it natively)
-  -- backspace
-  local function insert_bs()
-    search_text = search_text:sub(1, -2)
-    apply_filter()
+  local function to_nav()
+    vim.cmd("stopinsert!")
+    local row = math.min(cursor - scroll_offset, vim.api.nvim_buf_line_count(buf))
+    pcall(vim.api.nvim_win_set_cursor, win, { math.max(1, row + 1), 0 })
     render()
-    local line = vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]
-    pcall(vim.api.nvim_win_set_cursor, win, { 1, vim.api.nvim_strwidth(line) })
   end
-  vim.keymap.set("i", "<BS>", insert_bs, km)
-  vim.keymap.set("i", "<C-h>", insert_bs, km)
-  -- esc → navigation mode
+
+  -- === insert mode keymaps ===
   vim.keymap.set("i", "<Esc>", to_nav, km)
-  -- enter → confirm
   vim.keymap.set("i", "<CR>", function() vim.cmd("stopinsert"); select() end, km)
   vim.keymap.set("i", "<C-s>", function() vim.cmd("stopinsert"); select() end, km)
-  -- ctrl+q → cancel
   vim.keymap.set("i", "<C-q>", function() vim.cmd("stopinsert"); cancel() end, km)
-  -- arrows in insert → switch to nav + move
   vim.keymap.set("i", "<Down>", function() to_nav(); move(1) end, km)
   vim.keymap.set("i", "<Up>", function() to_nav(); move(-1) end, km)
 
   -- === navigation mode keymaps ===
-  -- j/k = up/down
   vim.keymap.set("n", "j", function() move(1) end, km)
-  vim.keymap.set("n", "k", function() move(-1) end, km)
   vim.keymap.set("n", "<Down>", function() move(1) end, km)
+  vim.keymap.set("n", "k", function() move(-1) end, km)
   vim.keymap.set("n", "<Up>", function() move(-1) end, km)
-  -- page scroll
   vim.keymap.set("n", "<C-d>", function() move(7) end, km)
   vim.keymap.set("n", "<C-u>", function() move(-7) end, km)
-  -- top/bottom
   vim.keymap.set("n", "G", function() cursor = #filtered; scroll_offset = math.max(0, #filtered - LIST_HEIGHT); render() end, km)
   vim.keymap.set("n", "gg", function() cursor = 1; scroll_offset = 0; render() end, km)
-  -- confirm / cancel
   vim.keymap.set("n", "<CR>", select, km)
   vim.keymap.set("n", "<Space>", select, km)
   vim.keymap.set("n", "q", cancel, km)
   vim.keymap.set("n", "<Esc>", cancel, km)
-  -- i → back to insert mode (search)
   vim.keymap.set("n", "i", to_insert, km)
-  -- / → focus search (clear and enter insert)
-  vim.keymap.set("n", "/", function() search_text = ""; apply_filter(); to_insert() end, km)
+  vim.keymap.set("n", "/", function()
+    search_text = ""
+    vim.api.nvim_buf_set_lines(buf, 0, 1, false, { "" })
+    apply_filter()
+    render()
+    to_insert()
+  end, km)
 
   -- start in insert mode
   to_insert()
