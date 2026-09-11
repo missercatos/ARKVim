@@ -76,13 +76,14 @@ return {
                     })
 
                     -- Set buffer lines
-                    vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
+                    local header = {
                       "# 输入文件/目录路径，每行一个",
                       "# 结尾带 / 创建目录，否则创建文件",
                       "# 相对于: " .. cwd,
                       "#",
-                    })
-                    vim.api.nvim_win_set_cursor(win, { 5, 0 })
+                    }
+                    vim.api.nvim_buf_set_lines(buf, 0, -1, false, header)
+                    vim.api.nvim_win_set_cursor(win, { #header, 0 })
 
                     -- Keymaps
                     local function confirm()
