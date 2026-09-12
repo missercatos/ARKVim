@@ -21,7 +21,10 @@ return {
         return true
       end,
       write_all_buffers = false,
-      noautocmd = false,
+      -- 关键：自动保存不触发 autocmd（不跑 conform 的 format_on_save），
+      -- 这样写代码时不会被实时格式化/对齐，也不会把展开的 {} 折叠回去。
+      -- 格式化只在手动 :w 时发生。
+      noautocmd = true,
       lockmarks = false,
       debounce_delay = 1000,
       minimization_detection = function()

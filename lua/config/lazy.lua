@@ -48,15 +48,22 @@ table.insert(spec, { import = "lazyvim.plugins.extras.test.core" })
 
 table.insert(spec, { import = "plugins" })
 
-require("arkvim.build").setup()
-require("arkvim.preview").setup()
-require("arkvim.modules").setup()
-require("arkvim.api").setup()
-require("arkvim.git").setup()
+-- 早期 setup：依赖首个 buffer 的 BufEnter/BufReadPost 检测，必须尽早注册
 require("arkvim.watcher").setup()
-require("arkvim.project")
-require("arkvim.capabilities")
-require("arkvim.hints").setup()
+require("arkvim.hints").setup() -- 内部会 require arkvim.project + arkvim.capabilities
+
+-- 仅注册键位的模块延迟到 VeryLazy，省启动时间（VeryLazy 紧随启动后触发）
+vim.api.nvim_create_autocmd("User", {
+  pattern = "VeryLazy",
+  once = true,
+  callback = function()
+    require("arkvim.build").setup()
+    require("arkvim.preview").setup()
+    require("arkvim.modules").setup()
+    require("arkvim.api").setup()
+    require("arkvim.git").setup()
+  end,
+})
 
 require("lazy").setup({
   spec = spec,

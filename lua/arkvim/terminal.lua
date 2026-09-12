@@ -46,8 +46,13 @@ local function is_kitty()
   return vim.env.KITTY_WINDOW_ID ~= nil or term:find("kitty", 1, true) ~= nil
 end
 
+-- 缓存：启动时会被多次调用（background / cursor_color / cursor_trail），只读一次文件
+local _kitty_lines
 local function kitty_conf()
-  return kitty_config_lines(vim.fn.expand("~/.config/kitty/kitty.conf"))
+  if not _kitty_lines then
+    _kitty_lines = kitty_config_lines(vim.fn.expand("~/.config/kitty/kitty.conf"))
+  end
+  return _kitty_lines
 end
 
 --- 从 kitty 配置里取某个键（后出现的覆盖先出现的）

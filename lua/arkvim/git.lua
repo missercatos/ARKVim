@@ -41,13 +41,9 @@ function M.setup()
     return ok and #out > 0 and vim.v.shell_error == 0
   end
 
-  -- which-key 分组注册 (v3 API: add + group)
-  local ok_wk, wk = pcall(require, "which-key")
-  if ok_wk then
-    wk.add({
-      { "<leader>G", group = "+Git (gh)" },
-    })
-  end
+  -- 说明：which-key 分组在 config/keymaps.lua 里注册。
+  -- 这里不能注册：本模块在 lazy.setup() 之前执行，which-key 还没在 rtp 上，
+  -- pcall(require, "which-key") 必然失败（原代码是死代码）。
 
   -- <leader>Gb — 交互式切换分支 (Snacks picker)
   map("n", "<leader>Gb", function()

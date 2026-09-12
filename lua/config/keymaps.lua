@@ -373,6 +373,7 @@ local ok_wk, wk = pcall(require, "which-key")
 if ok_wk then
   wk.add({
     { "<leader>B", group = "+build" },
+    { "<leader>G", group = "+Git (gh)" },
     { "<leader>R", group = "+REST" },
     { "<leader>j", group = "+Jupyter" },
     { "<leader>X", group = "+production" },

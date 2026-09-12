@@ -63,9 +63,9 @@ add({
   auto = false,
   plugins = {},
   keys = {
-    { "<leader>Xm", function() require("arkvim.mobile").android_menu() end, desc = "Android 设备" },
+    { "<leader>Xa", function() require("arkvim.mobile").android_menu() end, desc = "Android 设备" },
   },
-  hint = "检测到 Android/Gradle 项目 — 按 <leader>Xm 构建/安装/镜像",
+  hint = "检测到 Android/Gradle 项目 — 按 <leader>Xa 构建/安装/镜像",
   load = function()
     -- already loaded
   end,

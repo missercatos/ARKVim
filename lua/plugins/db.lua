@@ -11,8 +11,9 @@ return {
     cmd = { "DBUI", "DBUIToggle" },
     keys = {
       { "<leader>Xd", "<cmd>DBUIToggle<CR>", desc = "数据库面板" },
-      { "<leader>Ds", "<cmd>DB save<CR>", desc = "保存连接", mode = { "n", "v" } },
-      { "<leader>Dl", "<cmd>DB last<CR>", desc = "最近连接" },
+      -- 注意：不要用 <leader>Ds/<leader>Dl，那是 Docker 分组
+      { "<leader>Xds", "<cmd>DB save<CR>", desc = "保存连接", mode = { "n", "v" } },
+      { "<leader>Xdl", "<cmd>DB last<CR>", desc = "最近连接" },
     },
     init = function()
       vim.g.db_ui_show_database_icon = true
