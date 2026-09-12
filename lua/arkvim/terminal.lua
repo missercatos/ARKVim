@@ -114,6 +114,12 @@ function M.has_native_cursor_trail()
   return false
 end
 
+--- 是否为"富终端"：kitty + 能读到背景色配置（透明背景 / 自定义配色 / 光标拖影）。
+--- 非富终端一律走 tokyonight 保底配色（不透明、原厂语法色）。
+function M.rich()
+  return is_kitty() and M.background() ~= nil
+end
+
 -- 光标 / 拖影 / 粒子颜色统一入口（优先从终端配置读取）。
 -- 想改光标颜色：改 kitty 的 `cursor`（dank-theme.conf），或直接改这里的兜底值。
 M.cursor_color = (is_kitty() and kitty_get(kitty_conf(), "cursor")) or "#e3e2e4"

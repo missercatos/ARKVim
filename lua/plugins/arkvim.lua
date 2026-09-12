@@ -1,17 +1,27 @@
+local terminal = require("arkvim.terminal")
 local cava = require("arkvim.cava-theme").read_cava_colors()
+
+-- 富终端（kitty + 能读到背景色配置）：透明背景 + 自定义配色 + 终端光标色。
+-- 非富终端一律走 tokyonight 保底：不透明背景、原厂语法色。
+local rich = terminal.rich()
+
+-- 仅富终端生效的语法色
+local C = {
+  comment = "#7a8499",    -- 注释：柔和灰蓝，与关键字/正文明显区分
+  constant = "#c2a878",   -- 枚举/常量：柔和琥珀，与注释不同色
+  cursorline = "#1f2335", -- 行高亮：浅淡，不压暗语法
+}
 
 return {
   {
     "folke/tokyonight.nvim",
     opts = {
-      transparent = true,
       style = "night",
-      styles = {
-        sidebars = "transparent",
-        floats = "transparent",
-      },
+      transparent = rich,
+      styles = rich and { sidebars = "transparent", floats = "transparent" }
+        or { sidebars = "dark", floats = "dark" },
       on_colors = function(colors)
-        if cava then
+        if rich and cava then
           -- cava 渐变里可能有很暗的颜色（如 #233954），直接当语法前景会看不清。
           -- 只取亮度足够的颜色作为强调色，其余保留 tokyonight 原色。
           local function luminance(hex)
@@ -32,25 +42,37 @@ return {
           if bright[4] then colors.red = bright[4] end
           if bright[5] then colors.orange = bright[5] end
         end
-        colors.bg = "NONE"
-        colors.bg_dark = "NONE"
-        colors.bg_sidebar = "NONE"
-        colors.bg_statusline = "NONE"
+        if rich then
+          colors.bg = "NONE"
+          colors.bg_dark = "NONE"
+          colors.bg_sidebar = "NONE"
+          colors.bg_statusline = "NONE"
+        end
       end,
       on_highlights = function(hl)
-        local term = require("arkvim.terminal")
-        hl.Comment = { fg = "#a8b2e0" }
-        -- 透明背景下去掉 cursorline/cursorcolumn 的实心色块（会随光标拖动、压暗整行）
-        hl.CursorLine = { bg = "NONE", ctermbg = "NONE" }
-        hl.CursorColumn = { bg = "NONE", ctermbg = "NONE" }
-        -- 文件树/选择器选中行：Snacks 默认链接到 Visual（实心深色块），改成无背景+下划线
-        hl.SnacksPickerListCursorLine = { bg = "NONE", underline = true }
-        hl.SnacksPickerCursorLine = { bg = "NONE", underline = true }
-        hl.SnacksPickerBoxCursorLine = { bg = "NONE" }
-        hl.SnacksPickerInputCursorLine = { bg = "NONE" }
-        hl.SnacksPickerPreviewCursorLine = { bg = "NONE" }
-        -- nvim 光标颜色（与 kitty cursor / 拖影 cursor_color 保持一致）
-        hl.Cursor = { fg = term.cursor_text_color, bg = term.cursor_color }
+        if not rich then
+          return
+        end
+
+        -- 语法色：注释与枚举/常量改成不同颜色，且都不太鲜艳
+        hl.Comment = { fg = C.comment }
+        hl.Constant = { fg = C.constant }
+        hl["@constant"] = { fg = C.constant }
+        hl["@constant.builtin"] = { fg = C.constant }
+
+        -- 行高亮：编辑区 + 文件树，浅淡不抢眼
+        hl.CursorLine = { bg = C.cursorline }
+        hl.CursorColumn = { bg = "NONE" }
+        hl.SnacksPickerListCursorLine = { bg = C.cursorline }
+        hl.SnacksPickerCursorLine = { bg = C.cursorline }
+        hl.SnacksPickerBoxCursorLine = { bg = C.cursorline }
+        hl.SnacksPickerInputCursorLine = { bg = C.cursorline }
+        hl.SnacksPickerPreviewCursorLine = { bg = C.cursorline }
+
+        -- 光标颜色（与 kitty cursor / 拖影 cursor_color 保持一致）
+        hl.Cursor = { fg = terminal.cursor_text_color, bg = terminal.cursor_color }
+
+        -- 透明背景
         hl.Normal = { bg = "NONE", ctermbg = "NONE" }
         hl.NormalNC = { bg = "NONE", ctermbg = "NONE" }
         hl.NormalFloat = { bg = "NONE", ctermbg = "NONE" }
