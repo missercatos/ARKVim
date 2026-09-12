@@ -22,6 +22,11 @@ return {
     event = "VeryLazy",
     opts = {
       smear_insert_mode = true,
+      -- 透明背景修复：Normal bg=NONE 时拖影会退化成 #303030 实心深色块，
+      -- 这里让它融入 kitty 背景色 (#121315)，并避免遮挡目标字符。
+      cursor_color = "#e3e2e4",                 -- 拖影颜色（与 kitty cursor 一致）
+      transparent_bg_fallback_color = "#121315", -- 透明背景回退色 = kitty background
+      never_draw_over_target = true,             -- 不覆盖目标字符（修复字符瞬失）
       -- 头部速度：越大越快，0=不动，1=瞬移
       stiffness = 0.75,               -- default 0.6 (0.6 → 0.75)
       -- 尾部速度：越小尾巴拖得越长（保持不变）

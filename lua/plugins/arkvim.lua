@@ -12,11 +12,25 @@ return {
       },
       on_colors = function(colors)
         if cava then
-          colors.cyan = cava[1] or colors.cyan
-          colors.blue = cava[2] or colors.blue
-          colors.purple = cava[3] or colors.purple
-          colors.red = cava[4] or colors.red
-          colors.orange = cava[5] or colors.orange
+          -- cava 渐变里可能有很暗的颜色（如 #233954），直接当语法前景会看不清。
+          -- 只取亮度足够的颜色作为强调色，其余保留 tokyonight 原色。
+          local function luminance(hex)
+            local r = tonumber(hex:sub(2, 3), 16) or 0
+            local g = tonumber(hex:sub(4, 5), 16) or 0
+            local b = tonumber(hex:sub(6, 7), 16) or 0
+            return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
+          end
+          local bright = {}
+          for _, c in ipairs(cava) do
+            if type(c) == "string" and #c == 7 and luminance(c) >= 0.5 then
+              bright[#bright + 1] = c
+            end
+          end
+          colors.cyan = bright[1] or colors.cyan
+          colors.blue = bright[2] or colors.blue
+          colors.purple = bright[3] or colors.purple
+          if bright[4] then colors.red = bright[4] end
+          if bright[5] then colors.orange = bright[5] end
         end
         colors.bg = "NONE"
         colors.bg_dark = "NONE"
@@ -25,6 +39,9 @@ return {
       end,
       on_highlights = function(hl)
         hl.Comment = { fg = "#a8b2e0" }
+        -- 透明背景下去掉 cursorline/cursorcolumn 的实心色块（会随光标拖动、压暗整行）
+        hl.CursorLine = { bg = "NONE", ctermbg = "NONE" }
+        hl.CursorColumn = { bg = "NONE", ctermbg = "NONE" }
         hl.Normal = { bg = "NONE", ctermbg = "NONE" }
         hl.NormalNC = { bg = "NONE", ctermbg = "NONE" }
         hl.NormalFloat = { bg = "NONE", ctermbg = "NONE" }
