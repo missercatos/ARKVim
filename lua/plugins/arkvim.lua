@@ -10,6 +10,7 @@ local C = {
   comment = "#7a8499",    -- 注释：柔和灰蓝，与关键字/正文明显区分
   constant = "#c2a878",   -- 枚举/常量：柔和琥珀，与注释不同色
   cursorline = "#1f2335", -- 行高亮：浅淡，不压暗语法
+  ghost = "#8a94a8",      -- 补全幽灵文本：淡灰（参考注释色深），能看清又不与已输入内容混淆
 }
 
 return {
@@ -72,14 +73,18 @@ return {
         -- 光标颜色（与 kitty cursor / 拖影 cursor_color 保持一致）
         hl.Cursor = { fg = terminal.cursor_text_color, bg = terminal.cursor_color }
 
+        -- 补全菜单：菜单底 + 选中项要清晰可辨
+        hl.Pmenu = { fg = "#c0caf5", bg = "#16161e" }
+        hl.PmenuSel = { fg = "#c0caf5", bg = "#2f3d5e", bold = true }
+        hl.PmenuSbar = { bg = "#16161e" }
+        hl.PmenuThumb = { bg = "#2f3d5e" }
+        -- 补全幽灵文本（blink.cmp）：淡灰，能看清又不与已输入内容混淆
+        hl.BlinkCmpGhostText = { fg = C.ghost }
+
         -- 透明背景
         hl.Normal = { bg = "NONE", ctermbg = "NONE" }
         hl.NormalNC = { bg = "NONE", ctermbg = "NONE" }
         hl.NormalFloat = { bg = "NONE", ctermbg = "NONE" }
-        hl.Pmenu = { bg = "NONE", ctermbg = "NONE" }
-        hl.PmenuSel = { bg = "NONE", ctermbg = "NONE" }
-        hl.PmenuSbar = { bg = "NONE", ctermbg = "NONE" }
-        hl.PmenuThumb = { bg = "NONE", ctermbg = "NONE" }
         hl.TabLine = { bg = "NONE", ctermbg = "NONE" }
         hl.TabLineFill = { bg = "NONE", ctermbg = "NONE" }
         hl.TabLineSel = { bg = "NONE", ctermbg = "NONE" }
