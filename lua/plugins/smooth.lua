@@ -1,3 +1,12 @@
+local terminal = require("arkvim.terminal")
+
+-- 拖影/粒子颜色统一由 arkvim/terminal.lua 的 cursor_color 提供
+local CURSOR_COLOR = terminal.cursor_color
+
+-- 终端自带拖影（kitty cursor_trail > 0）时，关闭 nvim 侧拖影插件，避免双重拖影。
+-- 想用 nvim 的拖影+粒子：把 kitty.conf 里 cursor_trail 设为 0 即可。
+local native_trail = terminal.has_native_cursor_trail()
+
 return {
   -- mini.surround: sa/sd/sr surround operations
   {
@@ -16,35 +25,39 @@ return {
     opts = {},
   },
 
-  -- smear-cursor: animated cursor trail (fast preset + longer trail + particles)
+  -- smear-cursor: animated cursor trail (fast preset + smaller trail + particles)
   {
     "sphamba/smear-cursor.nvim",
     event = "VeryLazy",
+    -- 终端自带拖影时关闭本插件（避免双重拖影）
+    enabled = not native_trail,
     opts = {
       smear_insert_mode = true,
-      -- 透明背景修复：Normal bg=NONE 时拖影会退化成 #303030 实心深色块，
-      -- 这里让它融入 kitty 背景色 (#121315)，并避免遮挡目标字符。
-      cursor_color = "#e3e2e4",                 -- 拖影颜色（与 kitty cursor 一致）
-      transparent_bg_fallback_color = "#121315", -- 透明背景回退色 = kitty background
-      never_draw_over_target = true,             -- 不覆盖目标字符（修复字符瞬失）
+      -- 颜色：改顶部 CURSOR_COLOR 即可
+      cursor_color = CURSOR_COLOR,
+      cursor_color_insert_mode = CURSOR_COLOR,
+      -- 透明背景：用探测到的终端背景色，避免退化成实心深色块
+      transparent_bg_fallback_color = terminal.background() or "#303030",
+      never_draw_over_target = true,  -- 不覆盖目标字符（修复字符瞬失）
       -- 头部速度：越大越快，0=不动，1=瞬移
-      stiffness = 0.75,               -- default 0.6 (0.6 → 0.75)
-      -- 尾部速度：越小尾巴拖得越长（保持不变）
+      stiffness = 0.75,               -- default 0.6
+      -- 尾部速度：越小尾巴拖得越长
       trailing_stiffness = 0.35,      -- default 0.45
-      max_length = 40,                -- default 25 (允许更长的拖影)
+      max_length = 15,                -- default 25（拖影更小）
       damping = 0.85,                 -- default 0.85
       anticipation = 0.1,             -- default 0.2 (减少反向回摆)
-      distance_stop_animating = 0.5,  -- default 0.1 (更早停住)
+      distance_stop_animating = 0.8,  -- default 0.1 (更早停住)
       time_interval = 10,             -- default 17ms (更高帧率)
       delay_event_to_smear = 1,
       delay_after_key = 5,
       particles_enabled = true,       -- 粒子特效
-      -- 粒子更明显：更多、更大存活时间、更长尾迹
+      -- 粒子更明显：更多、存活更久、更分散
       particle_max_num = 200,         -- default 100
       particles_per_second = 400,     -- default 200
       particles_per_length = 2.0,     -- default 1.0
       particle_max_lifetime = 500,    -- default 300 (ms)
-      particle_spread = 0.6,          -- default 0.5 (更分散)
+      particle_spread = 0.6,          -- default 0.5
+      particles_over_text = false,    -- 不画在文字上，避免字符被遮挡
     },
   },
 

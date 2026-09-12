@@ -38,10 +38,19 @@ return {
         colors.bg_statusline = "NONE"
       end,
       on_highlights = function(hl)
+        local term = require("arkvim.terminal")
         hl.Comment = { fg = "#a8b2e0" }
         -- 透明背景下去掉 cursorline/cursorcolumn 的实心色块（会随光标拖动、压暗整行）
         hl.CursorLine = { bg = "NONE", ctermbg = "NONE" }
         hl.CursorColumn = { bg = "NONE", ctermbg = "NONE" }
+        -- 文件树/选择器选中行：Snacks 默认链接到 Visual（实心深色块），改成无背景+下划线
+        hl.SnacksPickerListCursorLine = { bg = "NONE", underline = true }
+        hl.SnacksPickerCursorLine = { bg = "NONE", underline = true }
+        hl.SnacksPickerBoxCursorLine = { bg = "NONE" }
+        hl.SnacksPickerInputCursorLine = { bg = "NONE" }
+        hl.SnacksPickerPreviewCursorLine = { bg = "NONE" }
+        -- nvim 光标颜色（与 kitty cursor / 拖影 cursor_color 保持一致）
+        hl.Cursor = { fg = term.cursor_text_color, bg = term.cursor_color }
         hl.Normal = { bg = "NONE", ctermbg = "NONE" }
         hl.NormalNC = { bg = "NONE", ctermbg = "NONE" }
         hl.NormalFloat = { bg = "NONE", ctermbg = "NONE" }
