@@ -1,7 +1,9 @@
 return {
   -- flutter-tools.nvim: Flutter dev with hot reload
+  -- 只有装了 flutter 才启用（否则打开 .dart 也会加载）
   {
     "nvim-flutter/flutter-tools.nvim",
+    enabled = vim.fn.executable("flutter") == 1,
     ft = { "dart" },
     dependencies = { "nvim-lua/plenary.nvim" },
     config = function()

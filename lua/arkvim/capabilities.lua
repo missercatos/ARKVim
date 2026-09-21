@@ -36,23 +36,20 @@ add({
 add({
   id = "flutter-device",
   label = "Flutter 设备/热重载",
-  kinds = { "flutter", "dart" },
-  auto = false,
+  kinds = { "flutter" },
+  auto = true, -- 检测到 Flutter 项目就加载工具链 + 注册 <leader>Xm
   plugins = { "nvim-flutter/flutter-tools.nvim" },
+  requires = {
+    bins = { "flutter" },
+    pacman = { "flutter" },
+    note = "Flutter SDK 未安装，flutter-tools 不会加载",
+  },
   keys = {
     { "<leader>Xm", function() require("arkvim.mobile").flutter_menu() end, desc = "Flutter 设备" },
   },
-  hint = "检测到 Flutter/Dart 项目 — 按 <leader>Xm 启动设备/热重载",
+  hint = "按 <leader>Xm 启动设备/热重载",
   load = function()
-    local ok, ft = pcall(require, "flutter-tools")
-    if ok then
-      ft.setup({
-        debugger = { enabled = false },
-        widget_guides = { enabled = true },
-        dev_log = { enabled = true },
-        fvm = false,
-      })
-    end
+    -- flutter-tools 的 setup 由 plugins/mobile.lua 负责，这里不要再 setup 以免覆盖
   end,
 })
 
@@ -77,6 +74,10 @@ add({
   kinds = { "jupyter", "python" },
   auto = false,
   plugins = { "benlubas/molten-nvim", "michaelb/sniprun" },
+  requires = {
+    bins = { "python3" },
+    note = "molten 需要 pynvim: pip install --user pynvim",
+  },
   keys = {
     { "<leader>ji", function() require("arkvim.mobile").molten_init() end, desc = "Jupyter 初始化" },
     { "<leader>jl", function() require("arkvim.mobile").sniprun_run() end, desc = "行内执行" },
@@ -114,6 +115,7 @@ add({
   kinds = { "node", "go", "spring", "gradle", "gradle_kotlin", "php", "python" },
   auto = false,
   plugins = { "mistweaverco/kulala.nvim" },
+  requires = { bins = { "curl" }, pacman = { "curl" } },
   keys = {
     { "<leader>Rs", function() require("kulala").run() end, desc = "Send Request", ft = "http" },
     { "<leader>Rt", function() require("kulala").toggle_view() end, desc = "Toggle Headers/Body", ft = "http" },
@@ -137,6 +139,7 @@ add({
   kinds = { "go", "rust", "python", "node", "java", "spring" },
   auto = false,
   plugins = { "amitds1997/remote-nvim.nvim" },
+  requires = { bins = { "ssh" }, pacman = { "openssh" } },
   keys = {
     { "<leader>Xr", "<cmd>RemoteStart<CR>", desc = "远程开发" },
   },
@@ -152,6 +155,7 @@ add({
   kinds = { "go", "rust", "python", "node", "java", "spring", "dart", "flutter", "php" },
   auto = false,
   plugins = { "pwntester/octo.nvim" },
+  requires = { bins = { "gh" }, pacman = { "github-cli" } },
   keys = {
     { "<leader>GP", "<cmd>Octo pr list<CR>", desc = "List PRs (Octo)" },
     { "<leader>GI", "<cmd>Octo issue list<CR>", desc = "List Issues (Octo)" },
@@ -190,10 +194,60 @@ function M.all()
   return CAPS
 end
 
+-- ---------------------------------------------------------------------------
+-- 依赖检查：缺依赖时用原生 vim.notify（会套上 noice/nvim-notify 特效）
+-- ---------------------------------------------------------------------------
+
+local _notified = {}
+
+--- 检查 cap.requires；返回 true=满足
+--- requires = { bins = { "flutter" }, pacman = { "flutter" }, note = "额外说明" }
+local function check_requires(cap, quiet)
+  local req = cap.requires
+  if not req or not req.bins or #req.bins == 0 then
+    return true
+  end
+  local missing = {}
+  for _, bin in ipairs(req.bins) do
+    if vim.fn.executable(bin) ~= 1 then
+      missing[#missing + 1] = bin
+    end
+  end
+  if #missing == 0 then
+    return true
+  end
+  if quiet and _notified[cap.id] then
+    return false
+  end
+  _notified[cap.id] = true
+
+  local msg = string.format("缺少依赖：%s", table.concat(missing, ", "))
+  if req.pacman and #req.pacman > 0 then
+    msg = msg .. "\n安装: sudo pacman -S " .. table.concat(req.pacman, " ")
+  end
+  if req.pip and #req.pip > 0 then
+    msg = msg .. "\n或: pip install " .. table.concat(req.pip, " ")
+  end
+  if req.note then
+    msg = msg .. "\n" .. req.note
+  end
+  vim.notify(msg, vim.log.levels.WARN, { title = "ARKVIM · " .. cap.label })
+  return false
+end
+
+M.check_requires = check_requires
+
+-- ---------------------------------------------------------------------------
+-- Public API
+-- ---------------------------------------------------------------------------
+
 --- Load a capability
-function M.load(cap_id)
+function M.load(cap_id, quiet)
   for _, cap in ipairs(CAPS) do
     if cap.id == cap_id then
+      if not check_requires(cap, quiet) then
+        return false
+      end
       if cap.plugins and #cap.plugins > 0 then
         local ok = pcall(require("lazy").load, { plugins = cap.plugins })
         if not ok then return false end
@@ -220,19 +274,19 @@ function M.auto_load(kind)
   local loaded = {}
   for _, cap in ipairs(caps) do
     if cap.auto then
-      M.load(cap.id)
+      M.load(cap.id, true) -- quiet: 依赖缺失只提示一次
       table.insert(loaded, cap.label)
     end
   end
   return loaded
 end
 
---- Get hint texts for on-demand caps
+--- Get hint texts for a kind (auto + on-demand 都返回)
 function M.hints_for_kind(kind)
   local caps = M.for_kind(kind)
   local hints = {}
   for _, cap in ipairs(caps) do
-    if not cap.auto and cap.hint then
+    if cap.hint then
       table.insert(hints, cap.hint)
     end
   end

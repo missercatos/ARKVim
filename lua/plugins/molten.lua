@@ -1,8 +1,10 @@
 return {
   -- molten-nvim: Jupyter inline output
+  -- 按需加载：只在按 <leader>ji 等键时加载。
+  -- 注意：.ipynb 的 ft 是 json 而不是 jupyter，所以不能用 ft 触发；
+  -- 之前用 ft={"python","jupyter"} 会导致打开任何 .py 都加载 molten。
   {
     "benlubas/molten-nvim",
-    ft = { "python", "jupyter" },
     build = ":UpdateRemotePlugins",
     keys = {
       { "<leader>ji", "<cmd>MoltenInit<CR>", desc = "Jupyter 初始化" },
