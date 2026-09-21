@@ -62,9 +62,9 @@ C、C++、Rust、Python、Java、Kotlin、Go、JavaScript、TypeScript、HTML、
 
 ### 光标拖影（smear-cursor）
 
-ARKVIM 自带 nvim 侧光标拖影（smear-cursor，带粒子特效），策略是**终端自带拖影时不重复启用**：
+ARKVIM 自带 nvim 侧光标拖影（smear-cursor，带粒子特效），策略是**终端自带拖影/光标动画时不重复启用**：
 
-- 启动时自动探测终端（kitty 的 `cursor_trail` 等）——有原生拖影就跳过 nvim 插件，并提示一次；
+- 启动时自动探测终端 —— 有原生动效就跳过 nvim 插件，并提示一次（提示只显示一次，之后可用 `:ArkTrail status` 查看）；
 - 想强制开启/关闭，随时用命令：
 
 | 命令 | 作用 |
@@ -74,14 +74,26 @@ ARKVIM 自带 nvim 侧光标拖影（smear-cursor，带粒子特效），策略�
 | `:ArkTrail toggle` | 切换（等同 `<space>us`） |
 | `:ArkTrail status` | 查看终端 / 插件 / 拖影状态 |
 
-**其他终端**：如果终端自带拖影但不在自动探测范围内，显式覆盖即可：
+#### 自动探测的终端
+
+| 终端 | 原生动效开关 | 说明 |
+|---|---|---|
+| **kitty** | `cursor_trail` > 0 | 读 `~/.config/kitty/kitty.conf`（含 `include`） |
+| **konsole** | `AnimatingCursorEnabled` | 读默认 profile 的 `[Terminal Features]`（`konsolerc` 的 `DefaultProfile`，或 `KONSOLE_PROFILE_NAME`）；源码默认 `false` |
+| foot / alacritty | 无此功能 | 探测到但不跳过，插件正常启用 |
+| 其他终端 | — | 用下面的覆盖开关 |
+
+加新终端：在 `lua/arkvim/terminal.lua` 的 `TRAIL_PROBES` 里追加一条 `{ name, match, get }` 即可。
+
+#### 覆盖（探测不到 / 想强制）
 
 ```lua
 -- init.lua
 vim.g.arkvim_native_cursor_trail = true   -- 我有原生拖影，别启插件
+vim.g.arkvim_native_cursor_trail = false  -- 反过来：强制启用插件
 ```
 
-或启动时带环境变量：`ARKVIM_NATIVE_CURSOR_TRAIL=1 nvim`。
+或启动时带环境变量：`ARKVIM_NATIVE_CURSOR_TRAIL=1 nvim`（`0/false/no` 为强制启用）。
 
 拖影颜色/速度/粒子参数在 `lua/plugins/smooth.lua`；光标颜色统一取自 `lua/arkvim/terminal.lua` 的 `cursor_color`（kitty 会读 `cursor` 配置）。
 

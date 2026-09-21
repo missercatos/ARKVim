@@ -107,8 +107,57 @@ function M.background()
 end
 
 -- ---------------------------------------------------------------------------
--- 终端自带光标拖影探测（通用：kitty / wezterm / foot / 其他）
+-- 终端自带光标拖影探测（通用：kitty / konsole / foot / 其他）
 -- ---------------------------------------------------------------------------
+
+--- Konsole 当前 profile 的文件内容。
+--- profile 名优先取 KONSOLE_PROFILE_NAME，其次读 konsolerc 的 DefaultProfile。
+local function konsole_profile_lines()
+  local name = vim.env.KONSOLE_PROFILE_NAME
+  if not name or name == "" then
+    local section = ""
+    for _, line in ipairs(read_lines(vim.fn.expand("~/.config/konsolerc"))) do
+      local s = line:match("^%s*%[([^%]]+)%]")
+      if s then
+        section = s
+      end
+      if section == "Desktop Entry" then
+        local v = line:match("^%s*DefaultProfile%s*=%s*(.+)$")
+        if v then
+          name = vim.trim(v)
+        end
+      end
+    end
+  end
+  name = name or "Default.profile"
+  if not name:find("%.profile$") then
+    name = name .. ".profile"
+  end
+
+  local candidates = {
+    vim.fn.expand("~/.local/share/konsole/") .. name,
+    "/usr/share/konsole/" .. name,
+    vim.fn.expand("~/.local/share/konsole/profiles/") .. name,
+  }
+  for _, path in ipairs(candidates) do
+    if vim.fn.filereadable(path) == 1 then
+      return read_lines(path)
+    end
+  end
+  return {}
+end
+
+--- Konsole：光标动画（[Terminal Features] AnimatingCursorEnabled）
+--- 源码 Profile.cpp 里默认值是 false，所以字段缺失时按 false 处理。
+local function konsole_animating_cursor()
+  for _, line in ipairs(konsole_profile_lines()) do
+    local v = line:match("^%s*AnimatingCursorEnabled%s*=%s*(%w+)")
+    if v then
+      return v:lower() == "true"
+    end
+  end
+  return false
+end
 
 --- 已知终端 + 它们的"拖影开关"读取方式。
 --- 新增一个终端时，只要往这里加一条：match 判断是不是该终端，get 读配置判断是否开启拖影。
@@ -129,6 +178,17 @@ local TRAIL_PROBES = {
       end
       return false
     end,
+  },
+  {
+    name = "konsole",
+    match = function()
+      return vim.env.KONSOLE_DBUS_SERVICE ~= nil
+        or vim.env.KONSOLE_DBUS_SESSION ~= nil
+        or vim.env.KONSOLE_VERSION ~= nil
+        or (vim.env.TERM or ""):lower():find("konsole", 1, true) ~= nil
+    end,
+    -- [Terminal Features] AnimatingCursorEnabled（源码默认 false）
+    get = konsole_animating_cursor,
   },
   {
     name = "foot",
