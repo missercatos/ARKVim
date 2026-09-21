@@ -113,7 +113,6 @@ C、C++、Rust、Python、Java、JavaScript、TypeScript、HTML、CSS、Dockerfi
 - **Linux**：完全支持。通过 `TERM_PROGRAM` / 父进程检测当前终端类型，自动开同类型新窗口。支持 kitty、alacritty、wezterm、foot、gnome-terminal、konsole、xfce4-terminal、lxterminal、urxvt、st、terminator、tilix、xterm、tmux、screen 等。检测不到时 fallback 按已知终端逐个尝试。
 - **macOS**：支持。检测 iTerm2 / Apple Terminal，通过 `.command` 临时脚本开同类型新窗口。`<space>fT` 和 `<space>k` 均可正常工作。
 - **Windows**：支持。检测 Windows Terminal (wt)、PowerShell、cmd、Git Bash，自动在同类型终端中打开新窗口。
-- **Windows**：未经测试。
 
 ## 配置结构
 
