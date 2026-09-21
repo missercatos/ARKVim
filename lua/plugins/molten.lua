@@ -3,14 +3,14 @@ return {
   -- 按需加载：只在按 <leader>ji 等键时加载。
   -- 注意：.ipynb 的 ft 是 json 而不是 jupyter，所以不能用 ft 触发；
   -- 之前用 ft={"python","jupyter"} 会导致打开任何 .py 都加载 molten。
+  -- rplugin manifest 也不在启动时加载，由 arkvim.mobile.molten_ensure() 按需注册。
   {
     "benlubas/molten-nvim",
-    build = ":UpdateRemotePlugins",
     keys = {
-      { "<leader>ji", "<cmd>MoltenInit<CR>", desc = "Jupyter 初始化" },
-      { "<leader>jl", "<cmd>MoltenEvaluateLine<CR>", desc = "Run Line" },
-      { "<leader>jr", "<cmd>MoltenReevaluateCell<CR>", desc = "Re-evaluate Cell" },
-      { "<leader>jo", "<cmd>MoltenOpenInBrowser<CR>", desc = "Open in Browser" },
+      { "<leader>ji", function() require("arkvim.mobile").molten_init() end, desc = "Jupyter 初始化" },
+      { "<leader>jl", function() require("arkvim.mobile").molten_cmd("MoltenEvaluateLine") end, desc = "Run Line" },
+      { "<leader>jr", function() require("arkvim.mobile").molten_cmd("MoltenReevaluateCell") end, desc = "Re-evaluate Cell" },
+      { "<leader>jo", function() require("arkvim.mobile").molten_cmd("MoltenOpenInBrowser") end, desc = "Open in Browser" },
     },
     config = function()
       vim.g.molten_output_type = "window"

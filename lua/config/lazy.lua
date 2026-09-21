@@ -62,6 +62,9 @@ vim.api.nvim_create_autocmd("User", {
     require("arkvim.modules").setup()
     require("arkvim.api").setup()
     require("arkvim.git").setup()
+    -- 光标拖影：终端自带拖影就不启动，否则自动开启；:ArkTrail 手动控制
+    require("arkvim.smear").setup()
+    require("arkvim.smear").auto_start()
   end,
 })
 

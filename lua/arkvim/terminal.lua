@@ -106,17 +106,97 @@ function M.background()
   return nil
 end
 
---- 终端是否自带光标拖影（kitty 的 cursor_trail > 0）
+-- ---------------------------------------------------------------------------
+-- 终端自带光标拖影探测（通用：kitty / wezterm / foot / 其他）
+-- ---------------------------------------------------------------------------
+
+--- 已知终端 + 它们的"拖影开关"读取方式。
+--- 新增一个终端时，只要往这里加一条：match 判断是不是该终端，get 读配置判断是否开启拖影。
+local TRAIL_PROBES = {
+  {
+    name = "kitty",
+    match = function()
+      return vim.env.KITTY_WINDOW_ID ~= nil
+        or (vim.env.TERM or ""):lower():find("kitty", 1, true) ~= nil
+    end,
+    -- cursor_trail > 0 即开启
+    get = function()
+      for _, line in ipairs(kitty_conf()) do
+        local v = line:match("^%s*cursor_trail%s+(%d+)")
+        if v and tonumber(v) > 0 then
+          return true
+        end
+      end
+      return false
+    end,
+  },
+  {
+    name = "foot",
+    match = function()
+      local t = (vim.env.TERM or ""):lower()
+      return t:find("foot", 1, true) ~= nil
+        or (vim.env.FOOT_SERVER_SOCKET ~= nil)
+    end,
+    -- foot 目前没有光标拖影选项
+    get = function()
+      return false
+    end,
+  },
+  {
+    name = "alacritty",
+    match = function()
+      return vim.env.ALACRITTY_WINDOW_ID ~= nil
+        or (vim.env.TERM or ""):lower():find("alacritty", 1, true) ~= nil
+    end,
+    -- alacritty 目前没有光标拖影选项
+    get = function()
+      return false
+    end,
+  },
+}
+
+--- 终端是否自带光标拖影。
+--- 优先级：vim.g 覆盖 > 环境变量覆盖 > 已知终端探测。
+--- 其他终端（或探测不准时）可显式覆盖：
+---   vim.g.arkvim_native_cursor_trail = true   -- 我有原生拖影，别启插件
+---   ARKVIM_NATIVE_CURSOR_TRAIL=1 nvim          -- 环境变量等价写法
 function M.has_native_cursor_trail()
-  if is_kitty() then
-    for _, line in ipairs(kitty_conf()) do
-      local v = line:match("^%s*cursor_trail%s+(%d+)")
-      if v and tonumber(v) > 0 then
+  local override = vim.g.arkvim_native_cursor_trail
+  if override == nil then
+    local env = vim.env.ARKVIM_NATIVE_CURSOR_TRAIL
+    if env == "1" or env == "true" or env == "yes" then
+      override = true
+    elseif env == "0" or env == "false" or env == "no" then
+      override = false
+    end
+  end
+  if override ~= nil then
+    return override == true
+  end
+
+  for _, probe in ipairs(TRAIL_PROBES) do
+    local ok, matched = pcall(probe.match)
+    if ok and matched then
+      local ok2, has = pcall(probe.get)
+      if ok2 and has then
         return true
       end
+      -- 命中的终端没开拖影：继续看别的终端（一般不会命中多个）
     end
   end
   return false
+end
+
+--- 当前终端名字（用于提示）
+function M.name()
+  for _, probe in ipairs(TRAIL_PROBES) do
+    local ok, matched = pcall(probe.match)
+    if ok and matched then
+      return probe.name
+    end
+  end
+  local term = vim.env.TERM or "unknown"
+  return term
 end
 
 --- 是否为"富终端"：kitty + 能读到背景色配置（透明背景 / 自定义配色 / 光标拖影）。

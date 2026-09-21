@@ -25,7 +25,8 @@ nvim
 
 ## 支持的语言
 
-C、C++、Rust、Python、Java、JavaScript、TypeScript、HTML、CSS、Dockerfile / Compose、Ruby、Lua
+C、C++、Rust、Python、Java、Kotlin、Go、JavaScript、TypeScript、HTML、CSS、Dockerfile / Compose、Ruby、Lua、Dart / Flutter、PHP，
+以及通过 `:ArkTrail`/构建系统覆盖的 Zig、Nim、Crystal、D、Haskell、OCaml、Lisp、Scheme、Racket、Erlang、Elixir、Julia、Swift、C#、Clojure、Scala、Solidity、Nix 等（脚手架共 35 种语言 / 100 个模板）。
 
 每种语言自动配置以下功能（前提是系统中已安装对应工具链）：
 
@@ -49,28 +50,64 @@ C、C++、Rust、Python、Java、JavaScript、TypeScript、HTML、CSS、Dockerfi
 | `<space>A` | 文件树内新建（从 cwd 根目录开始）：需写完整路径如 `src/main.java` 或 `a/b/`。 |
 | `<space>o` / `<space>O` | oil.nvim 文件管理器（浮动，当前目录 / cwd） |
 | `-` | oil.nvim 打开上级目录（vim-vinegar 风格） |
-| `<space>pc` | **一键创建框架工程**（选语言 → 选模板 → 输入项目名） |
+| `<space>pc` | **一键创建框架工程**（选语言 → 选模板 → 输入项目名，共 100 个模板） |
+| `<space>Bb/Br/Bt/Bc` | 构建 / 运行 / 测试 / 清理当前项目 |
+| `<space>Bw` / `<space>BW` | watch 模式：保存文件自动重跑 build / test（再按一次关闭） |
+| `<space>Bo` / `<space>BR` | overseer 任务面板 / 运行任务 |
+| `<space>tw` / `<space>tW` / `<space>tq` | 实时测试：watch 当前文件 / 整个项目 / 停止全部 |
+| `<space>us` 或 `:ArkTrail` | 光标拖影开关（见下方「光标拖影」） |
 | `<space>yd` | duplicate.nvim 复制当前行 / 选区 |
 | `<C-n>` | vim-visual-multi 多光标：选中后逐次 `<C-n>` 添加下一个匹配 |
 | `<space>D…` | Docker / Compose 快捷操作（见下方 DevOps） |
 
+### 光标拖影（smear-cursor）
+
+ARKVIM 自带 nvim 侧光标拖影（smear-cursor，带粒子特效），策略是**终端自带拖影时不重复启用**：
+
+- 启动时自动探测终端（kitty 的 `cursor_trail` 等）——有原生拖影就跳过 nvim 插件，并提示一次；
+- 想强制开启/关闭，随时用命令：
+
+| 命令 | 作用 |
+|---|---|
+| `:ArkTrail on` | 强制开启（会先把插件加载进来） |
+| `:ArkTrail off` | 关闭 |
+| `:ArkTrail toggle` | 切换（等同 `<space>us`） |
+| `:ArkTrail status` | 查看终端 / 插件 / 拖影状态 |
+
+**其他终端**：如果终端自带拖影但不在自动探测范围内，显式覆盖即可：
+
+```lua
+-- init.lua
+vim.g.arkvim_native_cursor_trail = true   -- 我有原生拖影，别启插件
+```
+
+或启动时带环境变量：`ARKVIM_NATIVE_CURSOR_TRAIL=1 nvim`。
+
+拖影颜色/速度/粒子参数在 `lua/plugins/smooth.lua`；光标颜色统一取自 `lua/arkvim/terminal.lua` 的 `cursor_color`（kitty 会读 `cursor` 配置）。
+
 ### 一键创建框架工程（`<space>pc`）
 
-在当前目录下创建带预设骨架的工程文件夹：
+在当前目录下创建带预设骨架的工程文件夹，**共 100 个模板 / 35 种语言**：
 
-| 语言 | 模板 |
+| 类别 | 模板 |
 |---|---|
-| Java | Spring Boot（联网 start.spring.io，离线自动回退最小骨架）、Plain Java |
-| C | CMake 工程 |
-| C++ | CMake 工程（C++17） |
-| Go | go module |
-| Rust | cargo binary |
-| Python | package、FastAPI |
-| DevOps | Docker Compose 栈 |
+| GUI / 图形 | Qt6 Widgets、Qt6 Quick/QML、GTK4、gtkmm3、wxWidgets、SDL3、raylib、GLFW+Dear ImGui、JavaFX、Swing、PySide6、Tkinter、Gradio、egui、Compose Multiplatform |
+| Java/Kotlin | Spring Boot、Quarkus、Micronaut、Java CLI、Android、Ktor |
+| C/C++ | CMake (C)、CMake (C++17) |
+| Go | module、Gin、Fiber、Echo、Chi |
+| Rust | Cargo、Actix、Axum、Rocket、Leptos、Bevy、Tauri |
+| Python | package、FastAPI、FastAPI+SQLAlchemy+Alembic、Django、Flask、Typer、argparse、**爬虫（requests+bs4 / Scrapy / Playwright / httpx+parsel）**、pytest、pandas、Streamlit、Celery |
+| Web/TS | Node、Express、Hono、React、Next.js、Vue、Nuxt、Angular、SvelteKit、Astro、SolidJS、Remix、Electron、React Native |
+| 系统语言 | Zig、Nim、Crystal、D、Julia、Swift、C#/.NET |
+| 少见语言 | **Haskell**、OCaml、**Common Lisp**、Scheme、Racket、Erlang、Elixir、Phoenix、Clojure、Scala、Perl |
+| 脚本/其他 | LÖVE、**Neovim 插件模板**、Bash、Nix flake、Solidity (Foundry)、Rails、Sinatra、Symfony、Laravel、Flutter、Dart |
+| DevOps | Docker Compose (nginx+PG)、Compose 基础设施 (PG+Redis) |
+
+**依赖提示**：每个模板声明了所需依赖（二进制 / pacman / pip / npm）。生成时若缺少依赖，会用**原生通知**提示安装命令（不阻塞生成），选择窗口里也会显示 `⚠ 缺依赖`。
 
 生成后会自动跳进项目目录（`cd`）并打开工程主文件。
 
-实现见 `lua/arkvim/scaffold.lua`，添加新模板只需在其 `langs[]` 中注册一个 `gen` 函数。
+实现见 `lua/arkvim/scaffold/`（`util.lua` 工具 + `init.lua` 注册表/选择窗口 + 各语言模块），添加新模板只需新建/修改对应语言文件里的 `M.frameworks`。
 
 ### DevOps（Docker / Compose）
 
@@ -124,33 +161,43 @@ C、C++、Rust、Python、Java、JavaScript、TypeScript、HTML、CSS、Dockerfi
   stylua.toml                  Lua 格式化配置
   lua/
     config/
-      lazy.lua                lazy.nvim 引导 + 语言扩展（按工具链条件加载）
+      lazy.lua                lazy.nvim 引导 + 语言扩展 + VeryLazy 延迟 setup
       keymaps.lua             快捷键
       options.lua             选项
       autocmds.lua            自动命令
-    plugins/
-      arkvim.lua              tokyonight 主题（透明背景）+ 仪表盘 ARKVIM 艺术字
-      c.lua                   C 语言支持
-      docker.lua              Docker / Compose 语言支持 + DevOps 快捷键
-      duplicate.lua           duplicate.nvim（复制行 / 选区）
-      go.lua                  Go 语言支持
-      html.lua                HTML / CSS 编辑增强（emmet、颜色预览）
-      java.lua                Java 语言支持
-      javascript.lua          JavaScript / TypeScript 支持
-      lua.lua                 Lua 语言支持
-      noice.lua               noice.nvim UI 美化
-      oil.lua                 oil.nvim 文件管理
-      python.lua              Python 语言支持
-      ruby.lua                Ruby 语言支持
-      rust.lua                Rust 语言支持
-      visual-multi.lua        vim-visual-multi 多光标
-      web.lua                 HTML / CSS LSP 支持
-    arkvim/
-      header.sh               ARKVIM 渐变艺术字渲染脚本（支持 cava 配色）
-      scaffold.lua            一键创建框架工程（Spring Boot / CMake / go / cargo / Python / Docker …）
-      deps.lua                fd 等外部依赖检测与自动安装
+      tty-theme.lua           TTY 磷光绿配色
+    arkvim/                   ARKVIM 自有功能模块
+      project.lua             统一项目检测（marker + glob，20+ 语言）
+      build.lua               构建/运行/测试/清理 + watch 模式
+      scaffold/               一键创建框架工程
+        init.lua                注册表 + 选择窗口 + 生成入口
+        util.lua                模板工具 + 依赖检查（原生通知）
+        java/kotlin/cpp/go/rust/python/ruby/php/dart/
+        web/systems/scripting/devops.lua   各语言模板
+      capabilities.lua        能力注册表（项目检测 → 自动加载 / 提示）
+      hints.lua               一次性提示 + 能力面板（<space>Xh）
+      terminal.lua            终端探测（背景色 / 光标色 / 是否自带拖影）
+      smear.lua               光标拖影开关（:ArkTrail on/off/toggle/status）
+      watcher.lua             外部修改监听（fs_event + checktime）
+      git.lua                 gh 一键操作（<space>G*）
+      mobile.lua              Flutter / Android / molten 辅助
+      preview.lua / modules.lua / api.lua / devops.lua / deps.lua
+      cava-theme.lua          cava 渐变配色读取
       tactical.lua            战术终端（foot/alacritty）极简 UI
+      header.sh / header-tactical.sh   启动页艺术字
+    plugins/                  lazy.nvim 插件 spec（含各语言/工具集成）
 ```
+
+## 性能
+
+启动时间约 **35ms**（`nvim --startuptime`），主要优化手段：
+
+- 所有插件懒加载（`lazy = true` + 事件/ft/keys 触发），启动时只加载必要项
+- `arkvim.*` 里只注册键位的模块延迟到 `VeryLazy`
+- markdown 相关插件按 `ft` 懒加载，不在启动时加载
+- molten 的 rplugin manifest 不在启动时加载，首次用 `<space>ji` 时按需注册
+- mini.icons 由 oil 按需加载（不声明为启动依赖）
+- 终端探测（kitty 配置等）结果缓存，只读一次
 
 ## 主题
 

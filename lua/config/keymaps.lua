@@ -351,17 +351,8 @@ for _, a in ipairs(devops_actions) do
   end, { desc = a[3] })
 end
 
--- UI toggle: smear-cursor
-map("n", "<leader>us", function()
-  local ok, smear = pcall(require, "smear_cursor")
-  if ok then
-    local state = vim.g.smear_cursor_enabled
-    vim.g.smear_cursor_enabled = not state
-    vim.notify(state and "光标拖影: 关" or "光标拖影: 开")
-  else
-    vim.notify("smear-cursor 未加载", vim.log.levels.WARN)
-  end
-end, { desc = "Toggle smear cursor" })
+-- UI toggle: 光标拖影（实现在 arkvim/smear.lua，注册于 VeryLazy）
+-- 这里不再重复注册，避免覆盖 :ArkTrail 的逻辑
 
 -- Capability hub
 map("n", "<leader>Xh", function()

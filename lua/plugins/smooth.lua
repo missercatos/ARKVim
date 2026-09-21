@@ -3,10 +3,6 @@ local terminal = require("arkvim.terminal")
 -- 拖影/粒子颜色统一由 arkvim/terminal.lua 的 cursor_color 提供
 local CURSOR_COLOR = terminal.cursor_color
 
--- 终端自带拖影（kitty cursor_trail > 0）时，关闭 nvim 侧拖影插件，避免双重拖影。
--- 想用 nvim 的拖影+粒子：把 kitty.conf 里 cursor_trail 设为 0 即可。
-local native_trail = terminal.has_native_cursor_trail()
-
 return {
   -- mini.surround: sa/sd/sr surround operations
   {
@@ -26,11 +22,11 @@ return {
   },
 
   -- smear-cursor: animated cursor trail (fast preset + smaller trail + particles)
+  -- lazy=true：永不自动加载。由 arkvim.smear 按"终端是否自带拖影"决定启动，
+  -- 也可随时用 :ArkTrail on/off/toggle/status 手动控制。
   {
     "sphamba/smear-cursor.nvim",
-    event = "VeryLazy",
-    -- 终端自带拖影时关闭本插件（避免双重拖影）
-    enabled = not native_trail,
+    lazy = true,
     opts = {
       smear_insert_mode = true,
       -- 颜色：改顶部 CURSOR_COLOR 即可

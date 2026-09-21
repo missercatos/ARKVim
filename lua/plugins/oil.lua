@@ -3,7 +3,8 @@
 return {
   {
     "stevearc/oil.nvim",
-    dependencies = { { "nvim-mini/mini.icons", opts = {} } },
+    -- 不声明 mini.icons 依赖：oil 内部是 pcall(require, "mini.icons") 按需加载，
+    -- 声明依赖会让 mini.icons 在启动时就加载（~2ms）。
     -- oil must be available to take over directory buffers (`nvim .`, `:e dir`)
     -- oil.nvim upstream explicitly advises against lazy loading
     lazy = false,
