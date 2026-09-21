@@ -114,6 +114,88 @@ local function commands(proj)
       cmds.run   = "cd " .. root .. " && make run"
       cmds.clean = "cd " .. root .. " && make clean"
     end
+  -- ===== 新增语言 =====
+  elseif k == "zig" then
+    cmds.build = "cd " .. root .. " && zig build"
+    cmds.run   = "cd " .. root .. " && zig build run"
+    cmds.test  = "cd " .. root .. " && zig build test"
+    cmds.clean = "cd " .. root .. " && rm -rf zig-cache .zig-cache zig-out"
+  elseif k == "nim" then
+    cmds.build = "cd " .. root .. " && nimble build"
+    cmds.run   = "cd " .. root .. " && nimble run"
+    cmds.test  = "cd " .. root .. " && nimble test"
+    cmds.clean = "cd " .. root .. " && rm -rf nimcache"
+  elseif k == "crystal" then
+    cmds.build = "cd " .. root .. " && shards build"
+    cmds.run   = "cd " .. root .. " && crystal run src/main.cr"
+    cmds.test  = "cd " .. root .. " && crystal spec"
+    cmds.clean = "cd " .. root .. " && rm -rf bin lib"
+  elseif k == "d" then
+    cmds.build = "cd " .. root .. " && dub build"
+    cmds.run   = "cd " .. root .. " && dub run"
+    cmds.test  = "cd " .. root .. " && dub test"
+    cmds.clean = "cd " .. root .. " && dub clean"
+  elseif k == "haskell" then
+    cmds.build = "cd " .. root .. " && cabal build"
+    cmds.run   = "cd " .. root .. " && cabal run"
+    cmds.test  = "cd " .. root .. " && cabal test"
+    cmds.clean = "cd " .. root .. " && cabal clean"
+  elseif k == "ocaml" then
+    cmds.build = "cd " .. root .. " && dune build"
+    cmds.run   = "cd " .. root .. " && dune exec -- ./bin/main.exe"
+    cmds.test  = "cd " .. root .. " && dune test"
+    cmds.clean = "cd " .. root .. " && dune clean"
+  elseif k == "lisp" then
+    cmds.run   = "cd " .. root .. " && sbcl --script main.lisp"
+    cmds.test  = "cd " .. root .. " && sbcl --non-interactive --eval '(asdf:test-system)'"
+  elseif k == "racket" then
+    cmds.run   = "cd " .. root .. " && racket main.rkt"
+    cmds.test  = "cd " .. root .. " && raco test ."
+  elseif k == "erlang" then
+    cmds.build = "cd " .. root .. " && rebar3 compile"
+    cmds.run   = "cd " .. root .. " && rebar3 shell"
+    cmds.test  = "cd " .. root .. " && rebar3 eunit"
+    cmds.clean = "cd " .. root .. " && rebar3 clean"
+  elseif k == "elixir" then
+    cmds.build = "cd " .. root .. " && mix compile"
+    cmds.run   = "cd " .. root .. " && mix run --no-halt"
+    cmds.test  = "cd " .. root .. " && mix test"
+    cmds.clean = "cd " .. root .. " && mix clean"
+  elseif k == "julia" then
+    cmds.run   = "cd " .. root .. " && julia main.jl"
+    cmds.test  = "cd " .. root .. " && julia --project -e 'using Pkg; Pkg.test()'"
+  elseif k == "swift" then
+    cmds.build = "cd " .. root .. " && swift build"
+    cmds.run   = "cd " .. root .. " && swift run"
+    cmds.test  = "cd " .. root .. " && swift test"
+    cmds.clean = "cd " .. root .. " && swift package clean"
+  elseif k == "csharp" then
+    cmds.build = "cd " .. root .. " && dotnet build"
+    cmds.run   = "cd " .. root .. " && dotnet run"
+    cmds.test  = "cd " .. root .. " && dotnet test"
+    cmds.clean = "cd " .. root .. " && dotnet clean"
+  elseif k == "clojure" then
+    cmds.run   = "cd " .. root .. " && clj -M:run"
+    cmds.test  = "cd " .. root .. " && clj -X:test"
+  elseif k == "scala" then
+    cmds.build = "cd " .. root .. " && sbt compile"
+    cmds.run   = "cd " .. root .. " && sbt run"
+    cmds.test  = "cd " .. root .. " && sbt test"
+    cmds.clean = "cd " .. root .. " && sbt clean"
+  elseif k == "solidity" then
+    cmds.build = "cd " .. root .. " && forge build"
+    cmds.test  = "cd " .. root .. " && forge test -vvv"
+    cmds.clean = "cd " .. root .. " && forge clean"
+  elseif k == "nix" then
+    cmds.build = "cd " .. root .. " && nix build"
+    cmds.run   = "cd " .. root .. " && nix develop"
+    cmds.clean = "cd " .. root .. " && rm -rf result"
+  elseif k == "love" then
+    cmds.run   = "cd " .. root .. " && love ."
+  elseif k == "tauri" then
+    cmds.build = "cd " .. root .. " && npm run tauri build"
+    cmds.run   = "cd " .. root .. " && npm run tauri dev"
+    cmds.clean = "cd " .. root .. " && rm -rf src-tauri/target dist"
   end
 
   return cmds
@@ -157,6 +239,68 @@ function M.run(action)
 end
 
 -- ---------------------------------------------------------------------------
+-- watch-build：保存文件时自动重新构建/测试（不依赖外部 watchexec/entr）
+-- ---------------------------------------------------------------------------
+
+local _watch = { enabled = false, action = "build", root = nil, timer = nil }
+
+--- 后台静默执行，失败时用原生通知
+local function run_silent(cmd, label)
+  vim.fn.jobstart({ "sh", "-c", cmd }, {
+    on_exit = function(_, code)
+      if code ~= 0 then
+        vim.notify(string.format("%s 失败 (exit %d)", label, code), vim.log.levels.ERROR)
+      end
+    end,
+  })
+end
+
+function M.watch_active()
+  return _watch.enabled
+end
+
+--- 开关 watch：保存时自动跑 build（或 test/run）
+function M.toggle_watch(action)
+  if _watch.enabled then
+    _watch.enabled = false
+    if _watch.timer then
+      _watch.timer:stop()
+      _watch.timer:close()
+      _watch.timer = nil
+    end
+    vim.notify("watch 已关闭", vim.log.levels.INFO)
+    return
+  end
+  local proj = M.project()
+  if not proj then
+    vim.notify("未检测到项目，无法开启 watch", vim.log.levels.WARN)
+    return
+  end
+  _watch.enabled = true
+  _watch.action = action or "build"
+  _watch.root = proj.root
+  vim.notify("watch 已开启：保存文件时自动 " .. _watch.action .. "（再按一次关闭）", vim.log.levels.INFO)
+end
+
+local function schedule_watch_build()
+  if not _watch.enabled then return end
+  if _watch.timer then
+    _watch.timer:stop()
+  else
+    _watch.timer = vim.uv.new_timer()
+  end
+  _watch.timer:start(500, 0, vim.schedule_wrap(function()
+    if not _watch.enabled then return end
+    local proj = M.project()
+    if not proj then return end
+    local cmd = commands(proj)[_watch.action]
+    if cmd then
+      run_silent(cmd, "watch-" .. _watch.action)
+    end
+  end))
+end
+
+-- ---------------------------------------------------------------------------
 -- dynamic keymap registration (<leader>B*)
 -- ---------------------------------------------------------------------------
 
@@ -176,6 +320,11 @@ local function register_keymaps()
     vim.keymap.set("n", a.lhs, function() M.run(a.action) end,
       { desc = a.desc, silent = true, noremap = true })
   end
+  -- watch 构建：保存自动重跑 build
+  vim.keymap.set("n", "<leader>Bw", function() M.toggle_watch("build") end,
+    { desc = "watch 构建 (保存自动)", silent = true, noremap = true })
+  vim.keymap.set("n", "<leader>BW", function() M.toggle_watch("test") end,
+    { desc = "watch 测试 (保存自动)", silent = true, noremap = true })
   local ok, wk = pcall(require, "which-key")
   if ok then
     wk.add({
@@ -190,6 +339,8 @@ local function unregister_keymaps()
   for _, a in ipairs(KEYMAP_ACTIONS) do
     pcall(vim.keymap.del, "n", a.lhs)
   end
+  pcall(vim.keymap.del, "n", "<leader>Bw")
+  pcall(vim.keymap.del, "n", "<leader>BW")
   _registered = false
 end
 
@@ -211,6 +362,19 @@ function M.setup()
   vim.api.nvim_create_autocmd({ "BufEnter", "DirChanged" }, {
     group = grp,
     callback = function() vim.schedule(refresh) end,
+  })
+  -- watch-build：保存时自动重跑
+  vim.api.nvim_create_autocmd("BufWritePost", {
+    group = grp,
+    callback = function(args)
+      if not _watch.enabled or not _watch.root then
+        return
+      end
+      local name = vim.api.nvim_buf_get_name(args.buf)
+      if name ~= "" and name:sub(1, #_watch.root) == _watch.root then
+        schedule_watch_build()
+      end
+    end,
   })
   vim.schedule(refresh)
 end

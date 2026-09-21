@@ -37,7 +37,34 @@ local MARKERS = {
   { file = "Makefile",        kind = "makefile", always = true },
   { file = "docker-compose.yml", kind = "docker_compose", always = true },
   { file = "docker-compose.yaml", kind = "docker_compose", always = true },
-  { file = ".ipynb",          kind = "jupyter",  always = true },
+  { glob = "*.ipynb",        kind = "jupyter",  always = true },
+
+  -- ===== 新增语言 / 框架 =====
+  { file = "build.zig",       kind = "zig",      always = true },
+  { glob = "*.nimble",        kind = "nim",      always = true },
+  { file = "shard.yml",       kind = "crystal",  always = true },
+  { file = "dub.json",        kind = "d",        always = true },
+  { file = "dub.sdl",         kind = "d",        always = true },
+  { glob = "*.cabal",         kind = "haskell",  always = true },
+  { file = "stack.yaml",      kind = "haskell",  always = true },
+  { file = "cabal.project",   kind = "haskell",  always = true },
+  { file = "dune-project",    kind = "ocaml",    always = true },
+  { glob = "*.asd",           kind = "lisp",     always = true },
+  { file = "info.rkt",        kind = "racket",   always = true },
+  { file = "rebar.config",    kind = "erlang",   always = true },
+  { file = "mix.exs",         kind = "elixir",   always = true },
+  { file = "Project.toml",    kind = "julia",    always = true },
+  { file = "Package.swift",   kind = "swift",    always = true },
+  { glob = "*.csproj",        kind = "csharp",   always = true },
+  { glob = "*.sln",           kind = "csharp",   always = true },
+  { file = "deps.edn",        kind = "clojure",  always = true },
+  { file = "project.clj",     kind = "clojure",  always = true },
+  { file = "build.sbt",       kind = "scala",    always = true },
+  { file = "foundry.toml",    kind = "solidity", always = true },
+  { file = "flake.nix",       kind = "nix",      always = true },
+  { file = "scrapy.cfg",      kind = "python",   always = true },
+  { file = "src-tauri/tauri.conf.json", kind = "tauri", always = true },
+  { file = "conf.lua",        kind = "love",     always = true },
 }
 
 local LANG_MAP = {
@@ -46,6 +73,11 @@ local LANG_MAP = {
   cmake_c = "c", cmake_cpp = "cpp", python = "python",
   flutter = "dart", dart = "dart", makefile = "make",
   docker_compose = "docker", jupyter = "python",
+  zig = "zig", nim = "nim", crystal = "crystal", d = "d",
+  haskell = "haskell", ocaml = "ocaml", lisp = "lisp", racket = "racket",
+  erlang = "erlang", elixir = "elixir", julia = "julia", swift = "swift",
+  csharp = "csharp", clojure = "clojure", scala = "scala",
+  solidity = "solidity", nix = "nix", tauri = "rust", love = "lua",
 }
 
 --- Walk up from `start` looking for marker files
@@ -53,8 +85,13 @@ local function find_root(start)
   local dir = start or vim.fn.getcwd()
   for _ = 1, 20 do
     for _, m in ipairs(MARKERS) do
-      local path = dir .. "/" .. m.file
-      if vim.fn.filereadable(path) == 1 then
+      local matched
+      if m.glob then
+        matched = #vim.fn.glob(dir .. "/" .. m.glob, false, true) > 0
+      else
+        matched = vim.fn.filereadable(dir .. "/" .. m.file) == 1
+      end
+      if matched then
         if m.check then
           if m.check(dir) then return dir, m.kind end
         else

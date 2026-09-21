@@ -3,6 +3,16 @@
 -- This spec merges into neotest's opts (it does NOT call neotest.setup()).
 local specs = {}
 
+-- 实时测试：neotest watch（保存/改动时自动重跑，需要 LSP 附加）
+table.insert(specs, {
+  "nvim-neotest/neotest",
+  keys = {
+    { "<leader>tw", function() require("neotest").watch.toggle(vim.fn.expand("%")) end, desc = "Watch File (实时测试)" },
+    { "<leader>tW", function() require("neotest").watch.toggle(vim.fn.getcwd()) end, desc = "Watch Project (实时测试)" },
+    { "<leader>tq", function() require("neotest").watch.stop() end, desc = "Stop All Watches" },
+  },
+})
+
 if vim.fn.executable("node") == 1 then
   table.insert(specs, {
     "nvim-neotest/neotest",
