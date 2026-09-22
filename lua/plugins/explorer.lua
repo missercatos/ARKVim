@@ -69,6 +69,8 @@ return {
                 keys = {
                   ["<leader>fd"] = "explorer_del",
                   ["d"] = false,
+                  -- 回上一级（<BS> 是 snacks 默认，再加个 vim-vinegar 风格的 -，和 oil 一致）
+                  ["-"] = "explorer_up",
 
                   ["a"] = function(_win)
                     local picker = get_explorer_picker()

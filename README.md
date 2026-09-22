@@ -50,7 +50,8 @@ C、C++、Rust、Python、Java、Kotlin、Go、JavaScript、TypeScript、HTML、
 | `<space>A` | 文件树内新建（从 cwd 根目录开始）：需写完整路径如 `src/main.java` 或 `a/b/`。 |
 | `<space>o` / `<space>O` | oil.nvim 文件管理器（浮动，当前目录 / cwd） |
 | `-` | oil.nvim 打开上级目录（vim-vinegar 风格） |
-| `<space>pc` | **一键创建框架工程**（选语言 → 选模板 → 输入项目名，共 100 个模板） |
+| `<space>pc` | **一键创建框架工程**（选语言 → 选模板 → 输入项目名，共 100 个模板；**不会改变工作目录**） |
+| `<space>pu` / `<space>pE` / `<space>pw` | 目录跳转：上一级 / 进入当前项目 / 回到工作区（也可用 `:ArkCd [path\|..\|-]`） |
 | `<space>Bb/Br/Bt/Bc` | 构建 / 运行 / 测试 / 清理当前项目 |
 | `<space>Bw` / `<space>BW` | watch 模式：保存文件自动重跑 build / test（再按一次关闭） |
 | `<space>Bo` / `<space>BR` | overseer 任务面板 / 运行任务 |
@@ -117,9 +118,23 @@ vim.g.arkvim_native_cursor_trail = false  -- 反过来：强制启用插件
 
 **依赖提示**：每个模板声明了所需依赖（二进制 / pacman / pip / npm）。生成时若缺少依赖，会用**原生通知**提示安装命令（不阻塞生成），选择窗口里也会显示 `⚠ 缺依赖`。
 
-生成后会自动跳进项目目录（`cd`）并打开工程主文件。
+生成后会自动打开工程主文件，**但不会 cd 进项目** —— 工作目录保持在工作区，所以：
 
-实现见 `lua/arkvim/scaffold/`（`util.lua` 工具 + `init.lua` 注册表/选择窗口 + 各语言模块），添加新模板只需新建/修改对应语言文件里的 `M.frameworks`。
+- 可以在同一个工作区里**平级创建多个框架**（不会套娃），不用来回切终端；
+- 左侧文件树停在工作区，能看到所有项目，想进去按 `<space>pE` 或 `:ArkCd`；
+- 想回工作区按 `<space>pw`（`:ArkCd -`），上一级按 `<space>pu`（`:ArkCd ..`）。
+
+```bash
+# 典型多框架工作区
+~/work/myapp/
+  backend/     ← <leader>pc 选 FastAPI
+  frontend/    ← <leader>pc 选 React + Vite
+  mobile/      ← <leader>pc 选 Flutter
+```
+
+**文件树里上下移动**：`<BS>` 或 `-` 回上一级（`-` 与 oil 一致），`l`/回车 进入，`h` 收起目录。`u` 是"刷新"而不是"上一级"，别按错。
+
+实现见 `lua/arkvim/scaffold/`（`util.lua` 工具 + `init.lua` 注册表/选择窗口 + 各语言模块）+ `lua/arkvim/dirs.lua`（目录跳转），添加新模板只需新建/修改对应语言文件里的 `M.frameworks`。
 
 ### DevOps（Docker / Compose）
 
@@ -180,6 +195,7 @@ vim.g.arkvim_native_cursor_trail = false  -- 反过来：强制启用插件
       tty-theme.lua           TTY 磷光绿配色
     arkvim/                   ARKVIM 自有功能模块
       project.lua             统一项目检测（marker + glob，20+ 语言）
+      dirs.lua                目录跳转（:ArkCd / <space>pu·pE·pw / 工作区记录）
       build.lua               构建/运行/测试/清理 + watch 模式
       scaffold/               一键创建框架工程
         init.lua                注册表 + 选择窗口 + 生成入口

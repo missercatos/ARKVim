@@ -241,45 +241,74 @@ end
 
 function M.create()
   framework_picker(function(framework)
-    local cwd = vim.fn.getcwd()
-    local name = vim.fn.input("项目名: ", vim.fn.fnamemodify(cwd, ":t"))
-    name = name:gsub("%s+", "-")
-    if name == "" then name = "myapp" end
-    local target = cwd .. "/" .. name
-    if vim.fn.isdirectory(target) == 1 or vim.fn.filereadable(target) == 1 then
-      notify("已存在同名文件/目录: " .. target, _log.ERROR)
-      return
-    end
-
-    -- 依赖检查：缺了用原生通知提示，但继续生成骨架
-    util.check(framework.requires, framework.label)
-
-    util.mkdir_p(target)
-    local ok, res = pcall(framework.gen, target, name)
-    if not ok then
-      notify("生成失败: " .. tostring(res), _log.ERROR)
-      vim.fn.system({ "rm", "-rf", target })
-      return
-    end
-
-    M.save_metadata(target, {
-      lang = framework.lang,
-      label = framework.label,
-      main = framework.main or "",
-    })
-    vim.g.arkvim_project_main = framework.main or ""
-    vim.cmd("cd " .. vim.fn.fnameescape(target))
-    notify(target .. "\n" .. res .. "\n已进入项目目录")
-
-    local main = framework.main
-    if type(main) == "function" then
-      main = main(name)
-    end
-    main = main or ""
-    if main ~= "" then
-      pcall(vim.cmd, "edit " .. vim.fn.fnameescape(target .. "/" .. main))
+    local base = vim.fn.getcwd()
+    local name = vim.fn.input("项目名 (在 " .. vim.fn.fnamemodify(base, ":~") .. "): ",
+      vim.fn.fnamemodify(base, ":t"))
+    local ok = M.generate(framework, name, base)
+    if ok then
+      -- 生成完保持工作目录不变，方便继续平级创建下一个
+      require("arkvim.dirs").remember_workspace(base)
+      M.open_main(framework, name, base)
     end
   end)
+end
+
+--- 生成项目（可单独调用，便于测试/脚本化）
+---@param framework table  M.frameworks 里的一项
+---@param name string 项目名
+---@param base? string 创建在哪个目录下（默认 cwd）
+---@return boolean ok, string? msg
+function M.generate(framework, name, base)
+  base = base or vim.fn.getcwd()
+  name = tostring(name or ""):gsub("%s+", "-")
+  if name == "" then
+    name = "myapp"
+  end
+  local target = base .. "/" .. name
+  if vim.fn.isdirectory(target) == 1 or vim.fn.filereadable(target) == 1 then
+    notify("已存在同名文件/目录: " .. target, _log.ERROR)
+    return false
+  end
+
+  -- 依赖检查：缺了用原生通知提示，但继续生成骨架
+  util.check(framework.requires, framework.label)
+
+  util.mkdir_p(target)
+  local ok, res = pcall(framework.gen, target, name)
+  if not ok then
+    notify("生成失败: " .. tostring(res), _log.ERROR)
+    vim.fn.system({ "rm", "-rf", target })
+    return false
+  end
+
+  M.save_metadata(target, {
+    lang = framework.lang,
+    label = framework.label,
+    main = framework.main or "",
+    workspace = base,
+  })
+  vim.g.arkvim_project_main = framework.main or ""
+
+  -- 关键：不 cd 进新项目。
+  -- 这样可以在同一个工作区里平级创建多个框架（不会套娃），
+  -- 文件树也停在工作区、能看到所有项目。
+  -- 想进去用 <leader>pE / :ArkCd；想回工作区用 <leader>pw / :ArkCd -
+  notify(string.format("%s\n%s\n工作区保持: %s\n(<leader>pE 进入项目 · <leader>pu 上一级)",
+    target, res, vim.fn.fnamemodify(base, ":~")))
+
+  return true, res
+end
+
+--- 打开生成好的主文件（配合 M.generate 使用）
+function M.open_main(framework, name, base)
+  local main = framework.main
+  if type(main) == "function" then
+    main = main(name)
+  end
+  main = main or ""
+  if main ~= "" then
+    pcall(vim.cmd, "edit " .. vim.fn.fnameescape((base or vim.fn.getcwd()) .. "/" .. main))
+  end
 end
 
 --- Save project metadata to stdpath("state")/arkvim/projects.json

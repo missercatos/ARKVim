@@ -65,6 +65,8 @@ vim.api.nvim_create_autocmd("User", {
     -- 光标拖影：终端自带拖影就不启动，否则自动开启；:ArkTrail 手动控制
     require("arkvim.smear").setup()
     require("arkvim.smear").auto_start()
+    -- 目录跳转：<leader>pu 上一级 / <leader>pE 进入项目 / <leader>pw 回工作区 / :ArkCd
+    require("arkvim.dirs").setup()
   end,
 })
 
