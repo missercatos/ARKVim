@@ -223,9 +223,19 @@ vim.g.arkvim_native_cursor_trail = false  -- 反过来：强制启用插件
 | `:ArkMusic player on` | 开启 nvim 内置本地音乐播放器（[player.nvim](https://github.com/jmatth11/player.nvim)）→ `<space>Mf` 选歌窗口 · `<space>Mp` 播放器面板 |
 | `:ArkMusic mpv` / `<space>Mm` | mpv 播放器小组件（[mpv.nvim](https://github.com/tamton-aquib/mpv.nvim)） |
 | `:ArkMusic echo` / `<space>Me` | 试听 [echo.nvim](https://github.com/melMass/echo.nvim) 音效（Windows / macOS 默认启用） |
-| `:ArkMusic status` | 查看各开关与依赖状态 |
+| `:ArkMusic status` | 查看各开关与依赖状态（含 player.nvim 原生库是否已构建） |
 
-依赖：`mpv`（自动播放 / mpv.nvim）、`player.nvim` 需要 build 脚本（仅类 Unix）、`echo.nvim` 需要它的 Rust 二进制。
+依赖与首次准备：
+
+- **mpv**：自动播放和 mpv.nvim 需要（Arch：`sudo pacman -S mpv`；Windows：`scoop install mpv`）
+- **player.nvim**：需要构建原生库，装完插件后先跑一次
+  ```
+  :Lazy build player.nvim
+  ```
+  它会自动下载 Zig 并编译（首次几分钟，需联网）。没构建时 `:ArkMusic player on` 会提示而不是报错。
+  仅类 Unix 有 `build.sh`，**Windows 上跳过构建，该功能不可用**。
+- **echo.nvim**：需要它自己的 Rust 二进制（`melMass/echo.nvim` 的 README 说明 0.0.1 的 lazy 安装还拿不到二进制）；仅在 Windows / macOS 默认启用。
+- **ambience.nvim**：GitHub 上找不到该插件，暂未接入（`:ArkMusic ambience` 会提示）。
 
 ## 其它新增插件
 

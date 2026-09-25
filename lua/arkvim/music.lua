@@ -59,11 +59,31 @@ local function unregister_player_keys()
   end
 end
 
+-- player.nvim 的原生库是否已构建（build.sh 的产物）
+local function player_lib_ok()
+  local dir = vim.fn.stdpath("data") .. "/lazy/player.nvim/zig-out/lib/"
+  for _, f in ipairs({ "libplayer_nvim.so", "libplayer_nvim.dylib", "player_nvim.dll" }) do
+    if vim.fn.filereadable(dir .. f) == 1 then
+      return true
+    end
+  end
+  return false
+end
+
 function M.set_player(on)
   if on then
+    -- 先确认原生库在，否则 require("player") 会直接抛 "无法打开共享目标文件"
+    if not player_lib_ok() then
+      vim.notify(
+        "player.nvim 还没构建好（缺少 zig-out/lib/libplayer_nvim.so）\n" ..
+        "先执行: :Lazy build player.nvim\n" ..
+        "（会自动下载 Zig 并编译，需要联网，首次几分钟）",
+        vim.log.levels.ERROR, { title = "ARKVIM" })
+      return false
+    end
     local ok = pcall(require("lazy").load, { plugins = { "player.nvim" }, force = true })
-    if not ok then
-      vim.notify("player.nvim 加载失败（该插件只在类 Unix 上测过；Windows 需要 bash 才能跑 build.sh）",
+    if not ok or package.loaded["player"] == nil then
+      vim.notify("player.nvim 加载失败（原生库有问题？试试 :Lazy build player.nvim）",
         vim.log.levels.ERROR, { title = "ARKVIM" })
       return false
     end
@@ -159,6 +179,7 @@ function M.status()
     "自动播放: " .. (M.state.autoplay and "开" or "关"),
     "本地播放器(player.nvim): " .. (M.state.player and "开" or "关") ..
       (play_loaded and "（已加载）" or "（未加载）"),
+    "  player.nvim 原生库: " .. (player_lib_ok() and "已构建" or "未构建 → :Lazy build player.nvim"),
     "mpv: " .. (mpv_ok and "已安装" or "未安装") .. " · mpv.nvim: " ..
       (package.loaded["mpv"] and "已加载" or "按需"),
     "echo.nvim: " .. (echo_loaded and "已加载" or "未启用/未构建"),
