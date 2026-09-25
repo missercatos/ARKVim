@@ -10,9 +10,14 @@ end
 -- `tree-sitter` CLI through Mason at startup. If Mason's bin is not yet on
 -- `PATH`, that install races with Mason's own config and repeatedly fails
 -- with "Package is already installing".
-local mason_bin = vim.fn.stdpath("data") .. "/mason/bin"
-if vim.fn.isdirectory(mason_bin) == 1 and not vim.env.PATH:find(mason_bin, 1, true) then
-  vim.env.PATH = mason_bin .. ":" .. vim.env.PATH
+--
+-- Nix/NixOS（ARKVIM_NO_MASON=1）下跳过：工具由 Nix 提供，Mason 的通用二进制
+-- 在 NixOS 上跑不了，前置进 PATH 反而会挤掉 Nix 的正常版本。
+if vim.env.ARKVIM_NO_MASON ~= "1" then
+  local mason_bin = vim.fn.stdpath("data") .. "/mason/bin"
+  if vim.fn.isdirectory(mason_bin) == 1 and not vim.env.PATH:find(mason_bin, 1, true) then
+    vim.env.PATH = mason_bin .. ":" .. vim.env.PATH
+  end
 end
 
 -- 战术终端（foot/alacritty）：准星光标拖影 + 快速响应 + 原生极简 UI

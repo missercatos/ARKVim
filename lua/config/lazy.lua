@@ -42,6 +42,9 @@ end
 if vim.fn.executable("docker") == 1 or vim.fn.executable("docker-compose") == 1 then
   table.insert(spec, { import = "lazyvim.plugins.extras.lang.docker" })
 end
+if vim.fn.executable("nix") == 1 or vim.fn.executable("nixd") == 1 or vim.fn.executable("nil") == 1 then
+  table.insert(spec, { import = "lazyvim.plugins.extras.lang.nix" })
+end
 
 table.insert(spec, { import = "lazyvim.plugins.extras.dap.core" })
 table.insert(spec, { import = "lazyvim.plugins.extras.test.core" })

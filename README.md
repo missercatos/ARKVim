@@ -23,10 +23,32 @@ git clone https://github.com/missercatos/ARKVim.git ~/.config/nvim
 nvim
 ```
 
+### NixOS / home-manager 一键复现
+
+仓库自带 `flake.nix`：把配置、neovim 和全套 LSP/工具链一起装好。
+
+```bash
+# NixOS：在你的 flake 里 import 本仓库的模块
+#   modules = [ arkvim.nixosModules.default { programs.arkvim.users = [ "你的用户名" ]; } ];
+sudo nixos-rebuild switch --flake /etc/nixos#myhost
+
+# 已有 home-manager：
+#   imports = [ arkvim.homeManagerModules.default ];  programs.arkvim.enable = true;
+home-manager switch --flake .#me
+
+# 只想试一下（不改系统）
+nix develop github:missercatos/ARKVim     # 带全套工具的 shell
+nix run     github:missercatos/ARKVim     # 直接跑 nvim
+```
+
+细节（选项、Mason 处理、symlink/copy 部署方式）见 [`nix/README.md`](nix/README.md)。
+
 ## 支持的语言
 
-C、C++、Rust、Python、Java、Kotlin、Go、JavaScript、TypeScript、HTML、CSS、Dockerfile / Compose、Ruby、Lua、Dart / Flutter、PHP，
-以及通过 `:ArkTrail`/构建系统覆盖的 Zig、Nim、Crystal、D、Haskell、OCaml、Lisp、Scheme、Racket、Erlang、Elixir、Julia、Swift、C#、Clojure、Scala、Solidity、Nix 等（脚手架共 35 种语言 / 100 个模板）。
+C、C++、Rust、Python、Java、Kotlin、Go、JavaScript、TypeScript、HTML、CSS、Dockerfile / Compose、Ruby、Lua、Dart / Flutter、PHP、**Nix**，
+以及通过 `:ArkTrail`/构建系统覆盖的 Zig、Nim、Crystal、D、Haskell、OCaml、Lisp、Scheme、Racket、Erlang、Elixir、Julia、Swift、C#、Clojure、Scala、Solidity 等（脚手架共 35 种语言 / 100 个模板）。
+
+**Nix** 语言支持：treesitter `nix` + LSP（`nixd` 优先，其次 `nil`）+ `nixfmt`/`alejandra` 格式化 + `statix`/`deadnix` 检查，见 `lua/plugins/nix.lua`。装了 `nix`/`nixd`/`nil` 任一即自动启用。**NixOS 一键复现见 [`nix/README.md`](nix/README.md)。**
 
 每种语言自动配置以下功能（前提是系统中已安装对应工具链）：
 
