@@ -72,7 +72,8 @@ let
     # ---------- 其它 ----------
     [ "sqlite" ] [ "redis" ] [ "postgresql" ]
     [ "docker-compose" ] [ "kubectl" ] [ "helm" ]
-    [ "imagemagick" ] [ "chafa" ]
+    [ "imagemagick" ] [ "ffmpeg" ] [ "chafa" ]
+    [ "mpv" ] [ "yt-dlp" ]
     [ "watchexec" ] [ "entr" ]
     [ "btop" ] [ "htop" ] [ "ncdu" ] [ "lsof" ] [ "strace" ]
     [ "pkg-config" ] [ "xz" ]

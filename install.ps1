@@ -305,9 +305,12 @@ if ($Tools) {
     [pscustomobject]@{ Id = 'EclipseAdoptium.Temurin.21.JDK'; Name = 'JDK 21' },
     [pscustomobject]@{ Id = 'LLVM.LLVM'; Name = 'LLVM (clang)' },
     [pscustomobject]@{ Id = 'Kitware.CMake'; Name = 'CMake' },
-    [pscustomobject]@{ Id = 'Ninja-build.Ninja'; Name = 'Ninja' }
+    [pscustomobject]@{ Id = 'Ninja-build.Ninja'; Name = 'Ninja' },
+    [pscustomobject]@{ Id = 'Gyan.FFmpeg'; Name = 'FFmpeg' },
+    [pscustomobject]@{ Id = 'yt-dlp.yt-dlp'; Name = 'yt-dlp' }
   )
   foreach ($p in $pkgs) { [void](Install-Winget $p.Id $p.Name) }
+  Write-Info 'mpv（音频播放用）建议单独装：scoop install mpv'
 }
 
 # 6. 配置

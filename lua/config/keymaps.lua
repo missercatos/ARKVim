@@ -389,6 +389,7 @@ if ok_wk then
   wk.add({
     { "<leader>B", group = "+build" },
     { "<leader>G", group = "+Git (gh)" },
+    { "<leader>M", group = "+music/媒体" },
     { "<leader>R", group = "+REST" },
     { "<leader>j", group = "+Jupyter" },
     { "<leader>X", group = "+production" },

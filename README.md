@@ -96,6 +96,9 @@ C、C++、Rust、Python、Java、Kotlin、Go、JavaScript、TypeScript、HTML、
 | `<space>Bo` / `<space>BR` | overseer 任务面板 / 运行任务 |
 | `<space>tw` / `<space>tW` / `<space>tq` | 实时测试：watch 当前文件 / 整个项目 / 停止全部 |
 | `<space>us` 或 `:ArkTrail` | 光标拖影开关（见下方「光标拖影」） |
+| `<space>uM` | **媒体文件：渲染 ↔ 源码（字节）切换**（图片/视频/GIF/PDF） |
+| `<space>Mm` / `<space>Me` | 音乐：mpv 播放器组件 / echo.nvim 音效试听 |
+| `:ArkMusic …` | 音频总开关（`player` / `autoplay` / `mpv` / `echo` / `status`） |
 | `<space>yd` | duplicate.nvim 复制当前行 / 选区 |
 | `<C-n>` | vim-visual-multi 多光标：选中后逐次 `<C-n>` 添加下一个匹配 |
 | `<space>D…` | Docker / Compose 快捷操作（见下方 DevOps） |
@@ -191,6 +194,38 @@ vim.g.arkvim_native_cursor_trail = false  -- 反过来：强制启用插件
 | `<space>Dx` | docker compose exec（询问 service / command） |
 | `<space>Ds` | docker ps -a |
 | `<space>Di` | docker images |
+
+## 媒体文件（图片 / 视频 / GIF / PDF）与音频
+
+### 渲染 ↔ 源码
+
+图片、视频、GIF、PDF 由 `snacks.image` 直接渲染；想**看源码（二进制字节）**：
+
+| 操作 | 说明 |
+|---|---|
+| `<space>uM` | 当前缓冲区：渲染 ↔ 源码 来回切 |
+| `:ArkMediaRender off` | **全局**关闭渲染（之后新开的媒体文件都按普通文本读） |
+| `:ArkMediaRender on` / `toggle` / `status` | 恢复 / 切换 / 查看状态 |
+
+切到源码时会自动 **`modifiable = true`**（可直接改字节）、`binary = true`、关语法。
+源码视图下 `:w` 会**弹确认**（写回就是直接改原文件），默认选"取消"。
+
+> 原理：`snacks.image` 用 `BufReadCmd` 接管了这些格式，buffer 里**其实没有内容**且被锁成 `nomodifiable`。
+> 所以只开 `modifiable` 会看到空文件；正确做法是 `:noautocmd edit!` 跳过它的 `BufReadCmd` 重新读一次字节。
+
+### 音频 / 音乐
+
+默认**全部关闭**，用命令开启（开启后才会注册对应快捷键）：
+
+| 命令 | 作用 |
+|---|---|
+| `:ArkMusic autoplay on` | 打开音频文件自动用 **mpv** 播放，离开缓冲区停止（默认关） |
+| `:ArkMusic player on` | 开启 nvim 内置本地音乐播放器（[player.nvim](https://github.com/jmatth11/player.nvim)）→ `<space>Mf` 选歌窗口 · `<space>Mp` 播放器面板 |
+| `:ArkMusic mpv` / `<space>Mm` | mpv 播放器小组件（[mpv.nvim](https://github.com/tamton-aquib/mpv.nvim)） |
+| `:ArkMusic echo` / `<space>Me` | 试听 [echo.nvim](https://github.com/melMass/echo.nvim) 音效（Windows / macOS 默认启用） |
+| `:ArkMusic status` | 查看各开关与依赖状态 |
+
+依赖：`mpv`（自动播放 / mpv.nvim）、`player.nvim` 需要 build 脚本（仅类 Unix）、`echo.nvim` 需要它的 Rust 二进制。
 
 ## 其它新增插件
 

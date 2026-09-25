@@ -70,6 +70,10 @@ vim.api.nvim_create_autocmd("User", {
     require("arkvim.smear").auto_start()
     -- 目录跳转：<leader>pu 上一级 / <leader>pE 进入项目 / <leader>pw 回工作区 / :ArkCd
     require("arkvim.dirs").setup()
+    -- 媒体文件：<leader>uM 渲染/源码切换；:ArkMediaRender 全局开关
+    require("arkvim.media").setup()
+    -- 音频：:ArkMusic 开关（mpv / 本地播放器 / 环境音 / 音效）
+    require("arkvim.music").setup()
   end,
 })
 
