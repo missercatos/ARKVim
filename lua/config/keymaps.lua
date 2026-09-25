@@ -172,13 +172,16 @@ end, { desc = "Terminal (external)" })
 local function compile_cmd(file, dir)
   local base = vim.fn.expand("%:t:r")
   local ext = string.lower(vim.fn.expand("%:e"))
+  local sys = require("arkvim.os")
 
   if ext == "c" then
     local cc = vim.fn.executable("gcc") == 1 and "gcc"
       or vim.fn.executable("clang") == 1 and "clang"
     if cc then
-      return string.format("%s -Wall -o %s %s && ./%s", cc,
-        vim.fn.shellescape(base), vim.fn.shellescape(file), vim.fn.shellescape(base))
+      local out = base .. sys.exe_suffix()
+      local run = sys.is_win and (".\\" .. out) or ("./" .. base)
+      return string.format("%s -Wall -o %s %s && %s", cc,
+        vim.fn.shellescape(out), vim.fn.shellescape(file), vim.fn.shellescape(run))
     end
     return "echo '错误: 未找到 C 编译器 (gcc/clang)'"
   end
@@ -186,8 +189,10 @@ local function compile_cmd(file, dir)
     local cpp = vim.fn.executable("g++") == 1 and "g++"
       or vim.fn.executable("clang++") == 1 and "clang++"
     if cpp then
-      return string.format("%s -std=c++17 -Wall -o %s %s && ./%s", cpp,
-        vim.fn.shellescape(base), vim.fn.shellescape(file), vim.fn.shellescape(base))
+      local out = base .. sys.exe_suffix()
+      local run = sys.is_win and (".\\" .. out) or ("./" .. base)
+      return string.format("%s -std=c++17 -Wall -o %s %s && %s", cpp,
+        vim.fn.shellescape(out), vim.fn.shellescape(file), vim.fn.shellescape(run))
     end
     return "echo '错误: 未找到 C++ 编译器 (g++/clang++)'"
   end
@@ -200,8 +205,10 @@ local function compile_cmd(file, dir)
   end
   if ext == "rs" then
     if vim.fn.executable("rustc") == 1 then
-      return string.format("rustc %s -o %s && ./%s",
-        vim.fn.shellescape(file), vim.fn.shellescape(base), vim.fn.shellescape(base))
+      local out = base .. sys.exe_suffix()
+      local run = sys.is_win and (".\\" .. out) or ("./" .. base)
+      return string.format("rustc %s -o %s && %s",
+        vim.fn.shellescape(file), vim.fn.shellescape(out), vim.fn.shellescape(run))
     end
     return "echo '错误: 未找到 Rust 编译器 (rustc)'"
   end
@@ -225,7 +232,7 @@ local function compile_cmd(file, dir)
     return "echo '错误: 未找到 C# 编译器 (mcs)'"
   end
   if ext == "html" then
-    vim.fn.jobstart({ "xdg-open", file }, { detach = true })
+    require("arkvim.os").open(file)
     vim.notify("浏览器中打开: " .. file)
     return nil, true
   end
@@ -238,6 +245,15 @@ map("n", "<leader>k", function()
   local dir = vim.fn.expand("%:p:h")
   local cmd, is_html = compile_cmd(file, dir)
   if is_html then
+    return
+  end
+  local sys = require("arkvim.os")
+  if sys.is_win then
+    -- cmd 支持 && 连接，Windows PowerShell 5.1 不支持
+    Snacks.terminal({ "cmd.exe", "/c", cmd .. " & echo. & pause" }, {
+      cwd = dir,
+      win = { position = "bottom", height = 0.25 },
+    })
     return
   end
   local shell = detect_shell()
@@ -274,6 +290,14 @@ map("n", "<leader>K", function()
   if is_html then
     return
   end
+
+  -- Windows：新开一个 cmd 窗口执行（/k 执行完不关窗）
+  if vim.fn.has("win32") == 1 then
+    vim.fn.jobstart({ "cmd.exe", "/c", "start", "编译运行", "cmd.exe", "/k", cmd },
+      { detach = true, cwd = dir })
+    return
+  end
+
   local shell = detect_shell()
   local full = string.format("cd %s && clear && %s; echo; echo '按 Enter 退出'; read",
     vim.fn.shellescape(dir), cmd)

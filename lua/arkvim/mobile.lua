@@ -3,18 +3,15 @@
 local M = {}
 
 local function run_in_terminal(cmd, title)
-  local shell = vim.fn.executable("zsh") == 1 and "zsh"
-    or vim.fn.executable("fish") == 1 and "fish"
-    or "bash"
-
-  local full_cmd = cmd .. "; echo; echo 'done'"
+  local osu = require("arkvim.os")
+  local full_cmd = cmd
+    .. (osu.is_win and "; Write-Host ''; Write-Host 'done'" or "; echo; echo 'done'")
   if vim.fn.executable("tmux") == 1 and os.getenv("TMUX") then
     local tmux_cmd = { "tmux", "split-window", "-l", "30%", "-c", vim.fn.getcwd(),
       "bash", "-c", full_cmd .. "; read" }
     vim.fn.jobstart(tmux_cmd, { detach = true })
   else
-    local term_cmd = { shell, "-c", full_cmd }
-    Snacks.terminal(term_cmd, {
+    Snacks.terminal(osu.shell_argv(full_cmd), {
       win = { title = title or "Terminal", position = "float" },
     })
   end

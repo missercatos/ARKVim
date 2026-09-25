@@ -4,6 +4,8 @@
 
 local M = {}
 
+local os_util = require("arkvim.os")
+
 local STATE_DIR = vim.fn.stdpath("state") .. "/arkvim"
 local STATE_FILE = STATE_DIR .. "/preview.json"
 
@@ -46,15 +48,11 @@ end
 
 local function is_running(state)
   if not state or not state.pid then return false end
-  -- check /proc/<pid> existence
-  return vim.fn.isdirectory("/proc/" .. state.pid) == 1
+  return os_util.alive(state.pid)
 end
 
 local function kill_pid(pid)
-  if not pid then return end
-  -- kill process group (-pid) first, then the pid itself
-  pcall(vim.fn.system, { "kill", "--", tostring(pid) })
-  pcall(vim.fn.system, { "kill", "-9", "--", tostring(pid) })
+  os_util.kill(pid)
 end
 
 -- ---------------------------------------------------------------------------
@@ -77,7 +75,11 @@ local function spawn_os(cmd, opts)
     return true
   end
 
-  -- fallback: detached jobstart
+  -- fallback: Windows 走 PowerShell，Unix 走 shell
+  if os_util.is_win then
+    vim.fn.jobstart(os_util.shell_argv(os_util.cd_cmd(cmd)), { detach = true })
+    return true
+  end
   vim.fn.jobstart({ shell, "-c", cmd }, { detach = true })
   return true
 end
@@ -87,8 +89,8 @@ end
 -- ---------------------------------------------------------------------------
 
 local function spawn_split(cmd)
-  local shell = detect_shell()
-  Snacks.terminal({ shell, "-c", "clear && " .. cmd }, {
+  local full = os_util.is_win and os_util.cd_cmd(cmd) or ("clear && " .. cmd)
+  Snacks.terminal(os_util.shell_argv(full), {
     win = { position = "bottom", height = 0.3 },
   })
 end
@@ -226,13 +228,11 @@ local function preview_commands(proj)
     }
   end
 
-  -- html / image: open in browser
+  -- html / image: 直接用系统默认程序打开（不 spawn 服务）
   if k == "html" or k == "css" then
     local file = vim.fn.expand("%:p")
     if file ~= "" and file:find(root, 1, true) then
       return {
-        os_cmd = "xdg-open " .. vim.fn.shellescape(file),
-        split_cmd = nil,
         url = file,
       }
     end
@@ -253,8 +253,17 @@ function M.preview_os()
     return
   end
   local cmds = preview_commands(proj)
-  if not cmds or not cmds.os_cmd then
+  if not cmds then
     vim.notify("该框架暂不支持独立窗口预览", vim.log.levels.WARN)
+    return
+  end
+  -- 纯文件预览（html/css）：直接用系统默认程序打开
+  if not cmds.os_cmd then
+    if cmds.url then
+      os_util.open(cmds.url)
+    else
+      vim.notify("该框架暂不支持独立窗口预览", vim.log.levels.WARN)
+    end
     return
   end
   -- kill existing preview if running
@@ -273,8 +282,8 @@ function M.preview_os()
   })
   vim.notify("已启动独立窗口预览")
   -- auto-open URL in browser if available
-  if cmds.url and has("xdg-open") then
-    vim.fn.jobstart({ "xdg-open", cmds.url }, { detach = true })
+  if cmds.url then
+    os_util.open(cmds.url)
   end
 end
 
@@ -322,8 +331,8 @@ end
 --- Open preview URL in browser
 function M.open_browser()
   local state = state_load()
-  if state and state.url and has("xdg-open") then
-    vim.fn.jobstart({ "xdg-open", state.url }, { detach = true })
+  if state and state.url then
+    os_util.open(state.url)
   else
     vim.notify("没有可打开的预览地址")
   end

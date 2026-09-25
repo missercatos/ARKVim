@@ -23,8 +23,10 @@ return {
   },
 
   -- sniprun: inline code execution
+  -- 仅 Unix：它的安装脚本是 bash，且不支持 Windows
   {
     "michaelb/sniprun",
+    enabled = vim.fn.has("unix") == 1,
     build = "bash install.sh",
     cmd = { "SnipRun", "SnipReset", "SnipInfo" },
     keys = {

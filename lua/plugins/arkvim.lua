@@ -94,6 +94,18 @@ return {
   {
     "folke/snacks.nvim",
     opts = function(_, opts)
+      -- 启动页艺术字：Unix 用 bash 脚本（可读 cava 配色），Windows 用 PowerShell 版
+      local is_win = vim.fn.has("win32") == 1
+      local header_cmd
+      if is_win then
+        header_cmd = {
+          "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
+          "-File", vim.fn.stdpath("config") .. "/lua/arkvim/header.ps1",
+        }
+      else
+        header_cmd = vim.fn.stdpath("config") .. "/lua/arkvim/header.sh"
+      end
+
       opts.image = vim.tbl_deep_extend("force", opts.image or {}, {
         enabled = true,
       })
@@ -101,7 +113,7 @@ return {
         sections = {
           {
             section = "terminal",
-            cmd = vim.fn.stdpath("config") .. "/lua/arkvim/header.sh",
+            cmd = header_cmd,
             height = 8,
             padding = 0,
             indent = 0,

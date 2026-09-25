@@ -1,0 +1,48 @@
+name: windows-installer
+
+# 把 install.ps1 打包成 install.exe（PS2EXE），供 Windows 用户直接下载双击。
+# - 打 tag 时自动作为 Release 附件
+# - 也可以在 Actions 页面手动触发（workflow_dispatch）
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 PS2EXE
+        shell: pwsh
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module ps2exe -Scope CurrentUser -Force -AllowClobber
+
+      - name: 构建 install.exe
+        shell: pwsh
+        run: ./windows/build-exe.ps1
+
+      - name: 校验产物
+        shell: pwsh
+        run: |
+          if (-not (Test-Path ./windows/install.exe)) { throw "install.exe 未生成" }
+          Get-Item ./windows/install.exe | Select-Object Name, Length
+
+      - name: 上传 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: install.exe
+          path: windows/install.exe
+          if-no-files-found: error
+
+      - name: 附加到 Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: windows/install.exe

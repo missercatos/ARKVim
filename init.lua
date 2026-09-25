@@ -9,14 +9,16 @@ local function detect_tactical()
 end
 vim.g.tactical = detect_tactical()
 
--- TTY detection: no desktop environment
+-- TTY detection: 只有 Linux 控制台（没有桌面环境）才算 TTY。
+-- 注意：Windows 上 DISPLAY/WAYLAND_DISPLAY 都是空的，不能只看这两个，
+-- 否则会误判成 TTY，套用绿色主题并关掉 termguicolors。
 local function detect_tty()
+  if vim.fn.has("linux") ~= 1 then
+    return false
+  end
   local display = vim.fn.getenv("DISPLAY")
   local wayland = vim.fn.getenv("WAYLAND_DISPLAY")
-  if display == "" and wayland == "" then
-    return true
-  end
-  return false
+  return display == "" and wayland == ""
 end
 vim.g.is_tty = detect_tty()
 

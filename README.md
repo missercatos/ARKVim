@@ -43,6 +43,23 @@ nix run     github:missercatos/ARKVim     # 直接跑 nvim
 
 细节（选项、Mason 处理、symlink/copy 部署方式）见 [`nix/README.md`](nix/README.md)。
 
+### Windows 一键安装
+
+三种方式，任选其一（装完 `nvim` 会进用户 PATH，所有 Windows 终端可用）：
+
+```powershell
+# 1) 一行命令（推荐）
+irm https://raw.githubusercontent.com/missercatos/ARKVim/master/install.ps1 | iex
+
+# 2) 下载 install.exe 双击（Releases 里，CI 自动构建）
+
+# 3) 下载仓库后双击 install.cmd，或：
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
+```
+
+默认装 Neovim + 配置 + ripgrep/fd + Nerd Font；`-Minimal` 只装 nvim+配置，`-Tools` 连语言工具链一起装。
+细节与已知限制见 [`windows/README.md`](windows/README.md)。
+
 ## 支持的语言
 
 C、C++、Rust、Python、Java、Kotlin、Go、JavaScript、TypeScript、HTML、CSS、Dockerfile / Compose、Ruby、Lua、Dart / Flutter、PHP、**Nix**，

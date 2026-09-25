@@ -210,14 +210,21 @@ local function run_in_terminal(cmd)
     vim.notify("该操作不支持当前项目类型", vim.log.levels.WARN)
     return
   end
+  local os_util = require("arkvim.os")
+  local win = { position = "bottom", height = 0.25 }
+
+  if os_util.is_win then
+    local full = os_util.cd_cmd(cmd) .. "; Write-Host ''; Write-Host '--- 完成 ---'"
+    Snacks.terminal(os_util.shell_argv(full), { win = win })
+    return
+  end
+
   local full_cmd = string.format("clear && %s; echo; echo '--- 完成 ---'", cmd)
   local shell = vim.fn.executable("zsh") == 1 and "zsh"
     or vim.fn.executable("fish") == 1 and "fish"
     or "bash"
 
-  Snacks.terminal({ shell, "-c", full_cmd }, {
-    win = { position = "bottom", height = 0.25 },
-  })
+  Snacks.terminal({ shell, "-c", full_cmd }, { win = win })
 end
 
 -- ---------------------------------------------------------------------------
@@ -246,7 +253,9 @@ local _watch = { enabled = false, action = "build", root = nil, timer = nil }
 
 --- 后台静默执行，失败时用原生通知
 local function run_silent(cmd, label)
-  vim.fn.jobstart({ "sh", "-c", cmd }, {
+  local os_util = require("arkvim.os")
+  local argv = os_util.is_win and os_util.silent_argv(os_util.cd_cmd(cmd)) or { "sh", "-c", cmd }
+  vim.fn.jobstart(argv, {
     on_exit = function(_, code)
       if code ~= 0 then
         vim.notify(string.format("%s 失败 (exit %d)", label, code), vim.log.levels.ERROR)

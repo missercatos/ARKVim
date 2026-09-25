@@ -28,7 +28,11 @@ local function in_tmux_or_float(cmd, title)
     vim.fn.jobstart({ "tmux", "split-window", "-l", "30%", "-c", cwd,
       "bash", "-c", cmd .. "; echo '按 Enter 退出'; read" }, { detach = true })
   else
-    Snacks.terminal({ "bash", "-c", cmd .. "; echo; echo '按 Enter 退出'; read" }, {
+    local osu = require("arkvim.os")
+    local full = cmd
+      .. (osu.is_win and "; Write-Host ''; Read-Host '按 Enter 退出'"
+        or "; echo; echo '按 Enter 退出'; read")
+    Snacks.terminal(osu.shell_argv(full), {
       cwd = cwd,
       win = { title = title or "Git", position = "float" },
     })
