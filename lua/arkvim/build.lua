@@ -66,12 +66,14 @@ local function commands(proj)
   local cmds = {}
 
   if k == "spring" then
-    cmds.build  = "cd " .. root .. " && mvn -q package -DskipTests"
-    cmds.run    = "cd " .. root .. " && mvn -q spring-boot:run"
-    cmds.test   = "cd " .. root .. " && mvn -q test"
-    cmds.clean  = "cd " .. root .. " && mvn -q clean"
+    -- 优先用项目里的 wrapper（系统里没装 mvn/gradle 也能跑）
+    local mvn = vim.fn.executable(root .. "/mvnw") == 1 and "./mvnw" or "mvn"
+    cmds.build  = "cd " .. root .. " && " .. mvn .. " -q package -DskipTests"
+    cmds.run    = "cd " .. root .. " && " .. mvn .. " -q spring-boot:run"
+    cmds.test   = "cd " .. root .. " && " .. mvn .. " -q test"
+    cmds.clean  = "cd " .. root .. " && " .. mvn .. " -q clean"
     -- 带 JDWP 调试端口启动，之后可用 :ArkDebug attach 连接
-    cmds.debug  = 'cd ' .. root .. ' && mvn spring-boot:run ' ..
+    cmds.debug  = "cd " .. root .. " && " .. mvn .. " spring-boot:run " ..
       '-Dspring-boot.run.jvmArguments="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"'
     if has("java") then
       local jars = vim.fn.glob(root .. "/target/*.jar", false, true)
@@ -80,7 +82,14 @@ local function commands(proj)
       end
     end
   elseif k == "java" then
-    if has("javac") and has("java") then
+    if vim.fn.filereadable(root .. "/pom.xml") == 1 then
+      -- 普通 Maven 项目（非 Spring Boot）
+      local mvn = vim.fn.executable(root .. "/mvnw") == 1 and "./mvnw" or "mvn"
+      cmds.build = "cd " .. root .. " && " .. mvn .. " -q package -DskipTests"
+      cmds.run   = "cd " .. root .. " && " .. mvn .. " -q exec:java"
+      cmds.test  = "cd " .. root .. " && " .. mvn .. " -q test"
+      cmds.clean = "cd " .. root .. " && " .. mvn .. " -q clean"
+    elseif has("javac") and has("java") then
       local maincls = "$(find src -name '*.java' | head -1 | sed 's|src/||;s|\\.java||;s|/|.|g')"
       cmds.build = "cd " .. root .. " && find src -name '*.java' | xargs javac -d out"
       cmds.run   = "cd " .. root .. " && java -cp out " .. maincls
@@ -89,7 +98,9 @@ local function commands(proj)
         " && java -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005 -cp out " .. maincls
     end
   elseif k == "gradle" or k == "gradle_kotlin" then
-    local gw = has("./gradlew") and "./gradlew" or "gradle"
+    -- 注意：必须用绝对路径判断 wrapper，executable("./gradlew") 是相对 nvim 的 cwd 的，
+    -- 在别的目录里打开项目时会误判成没 wrapper，从而去调系统 gradle（可能根本没装）。
+    local gw = vim.fn.executable(root .. "/gradlew") == 1 and "./gradlew" or "gradle"
     local gradle_task = detect_gradle_task(root)
     cmds.build  = "cd " .. root .. " && " .. gw .. " build -x test"
     cmds.run    = "cd " .. root .. " && " .. gw .. " " .. gradle_task
@@ -143,6 +154,8 @@ local function commands(proj)
       cmds.run   = "cd " .. root .. " && php artisan serve"
       cmds.test  = "cd " .. root .. " && php artisan test"
       cmds.clean = "cd " .. root .. " && composer clear-cache"
+    elseif vim.fn.filereadable(root .. "/vendor/bin/phpunit") == 1 then
+      cmds.test  = "cd " .. root .. " && vendor/bin/phpunit"
     end
   elseif k == "flutter" then
     if has("flutter") then
@@ -161,6 +174,7 @@ local function commands(proj)
   elseif k == "cmake_c" or k == "cmake_cpp" then
     if has("cmake") then
       cmds.build = "cd " .. root .. " && cmake -S . -B build && cmake --build build"
+      cmds.test  = "cd " .. root .. " && ctest --test-dir build --output-on-failure"
       cmds.clean = "cd " .. root .. " && rm -rf build"
       local bins = vim.fn.glob(root .. "/build/*", false, true)
       for _, b in ipairs(bins) do
@@ -180,6 +194,7 @@ local function commands(proj)
     if has("make") then
       cmds.build = "cd " .. root .. " && make"
       cmds.run   = "cd " .. root .. " && make run"
+      cmds.test  = "cd " .. root .. " && make test"
       cmds.clean = "cd " .. root .. " && make clean"
     end
   -- ===== 新增语言 =====
@@ -257,12 +272,14 @@ local function commands(proj)
   elseif k == "nix" then
     cmds.build = "cd " .. root .. " && nix build"
     cmds.run   = "cd " .. root .. " && nix develop"
+    cmds.test  = "cd " .. root .. " && nix flake check"
     cmds.clean = "cd " .. root .. " && rm -rf result"
   elseif k == "love" then
     cmds.run   = "cd " .. root .. " && love ."
   elseif k == "tauri" then
     cmds.build = "cd " .. root .. " && npm run tauri build"
     cmds.run   = "cd " .. root .. " && npm run tauri dev"
+    cmds.test  = "cd " .. root .. " && cargo test --manifest-path src-tauri/Cargo.toml"
     cmds.clean = "cd " .. root .. " && rm -rf src-tauri/target dist"
   end
 
@@ -303,14 +320,29 @@ function M.project()
   return require("arkvim.project").current()
 end
 
+local ACTION_LABEL = { build = "构建", run = "运行", test = "测试", clean = "清理", debug = "调试" }
+
 function M.run(action)
   local proj = M.project()
   if not proj then
-    vim.notify("未检测到项目 (没有找到 marker 文件)", vim.log.levels.WARN)
+    vim.notify(
+      "未检测到项目（从文件所在目录向上找不到 marker 文件）\n目录: " .. vim.fn.getcwd(),
+      vim.log.levels.WARN, { title = "ARKVIM · build" })
     return
   end
   local cmds = commands(proj)
-  run_in_terminal(cmds[action])
+  local cmd = cmds[action]
+  if not cmd then
+    local avail = vim.tbl_map(function(a) return ACTION_LABEL[a] or a end, vim.tbl_keys(cmds))
+    table.sort(avail)
+    vim.notify(
+      string.format("项目类型 %s 不支持「%s」\n可用: %s",
+        proj.kind or proj.lang or "?", ACTION_LABEL[action] or action,
+        #avail > 0 and table.concat(avail, " / ") or "无"),
+      vim.log.levels.WARN, { title = "ARKVIM · build" })
+    return
+  end
+  run_in_terminal(cmd)
 end
 
 --- 调试启动命令（按项目类型）
@@ -391,11 +423,8 @@ local function schedule_watch_build()
 end
 
 -- ---------------------------------------------------------------------------
--- dynamic keymap registration (<leader>B*)
+-- keymaps (<leader>B*)
 -- ---------------------------------------------------------------------------
-
-local _registered = false
-local _current_root = nil
 
 local KEYMAP_ACTIONS = {
   { lhs = "<leader>Bb", action = "build", desc = "构建项目" },
@@ -404,13 +433,19 @@ local KEYMAP_ACTIONS = {
   { lhs = "<leader>Bc", action = "clean", desc = "清理项目" },
 }
 
+local _registered = false
+
+--- 键位始终注册。
+--- 之前是「检测到项目才注册」：一旦项目没识别出来（cwd 在别的 git 仓库里、
+--- 或者文件在一个没有 marker 的仓库里），<leader>Bt 会静默消失，
+--- 按下去完全没反应，很难排查。
 local function register_keymaps()
   if _registered then return end
   for _, a in ipairs(KEYMAP_ACTIONS) do
     vim.keymap.set("n", a.lhs, function() M.run(a.action) end,
       { desc = a.desc, silent = true, noremap = true })
   end
-  -- watch 构建：保存自动重跑 build
+  -- watch：保存时自动重跑
   vim.keymap.set("n", "<leader>Bw", function() M.toggle_watch("build") end,
     { desc = "watch 构建 (保存自动)", silent = true, noremap = true })
   vim.keymap.set("n", "<leader>BW", function() M.toggle_watch("test") end,
@@ -424,36 +459,10 @@ local function register_keymaps()
   _registered = true
 end
 
-local function unregister_keymaps()
-  if not _registered then return end
-  for _, a in ipairs(KEYMAP_ACTIONS) do
-    pcall(vim.keymap.del, "n", a.lhs)
-  end
-  pcall(vim.keymap.del, "n", "<leader>Bw")
-  pcall(vim.keymap.del, "n", "<leader>BW")
-  _registered = false
-end
-
-local function refresh()
-  local proj = M.project()
-  local new_root = proj and proj.root or nil
-  if new_root ~= _current_root then
-    _current_root = new_root
-    if new_root then
-      register_keymaps()
-    else
-      unregister_keymaps()
-    end
-  end
-end
-
 function M.setup()
-  local grp = vim.api.nvim_create_augroup("arkvim_build", { clear = true })
-  vim.api.nvim_create_autocmd({ "BufEnter", "DirChanged" }, {
-    group = grp,
-    callback = function() vim.schedule(refresh) end,
-  })
+  register_keymaps()
   -- watch-build：保存时自动重跑
+  local grp = vim.api.nvim_create_augroup("arkvim_build", { clear = true })
   vim.api.nvim_create_autocmd("BufWritePost", {
     group = grp,
     callback = function(args)
@@ -466,7 +475,6 @@ function M.setup()
       end
     end,
   })
-  vim.schedule(refresh)
 end
 
 return M

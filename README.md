@@ -91,7 +91,7 @@ C、C++、Rust、Python、Java、Kotlin、Go、JavaScript、TypeScript、HTML、
 | `-` | oil.nvim 打开上级目录（vim-vinegar 风格） |
 | `<space>pc` | **一键创建框架工程**（选语言 → 选模板 → 输入项目名，共 100 个模板；**不会改变工作目录**） |
 | `<space>pu` / `<space>pE` / `<space>pw` | 目录跳转：上一级 / 进入当前项目 / 回到工作区（也可用 `:ArkCd [path\|..\|-]`） |
-| `<space>Bb/Br/Bt/Bc` | 构建 / 运行 / 测试 / 清理当前项目 |
+| `<space>Bb/Br/Bt/Bc` | 构建 / 运行 / 测试 / 清理当前项目（键位常驻；不在项目里会直接告诉你） |
 | `<space>Bw` / `<space>BW` | watch 模式：保存文件自动重跑 build / test（再按一次关闭） |
 | `<space>Bo` / `<space>BR` | overseer 任务面板 / 运行任务 |
 | `<space>tw` / `<space>tW` / `<space>tq` | 实时测试：watch 当前文件 / 整个项目 / 停止全部（neotest 不可用时自动退回保存触发） |
@@ -238,6 +238,20 @@ vim.g.arkvim_native_cursor_trail = false  -- 反过来：强制启用插件
   仅类 Unix 有 `build.sh`，**Windows 上跳过构建，该功能不可用**。
 - **echo.nvim**：需要它自己的 Rust 二进制（`melMass/echo.nvim` 的 README 说明 0.0.1 的 lazy 安装还拿不到二进制）；仅在 Windows / macOS 默认启用。
 - **ambience.nvim**：GitHub 上找不到该插件，暂未接入（`:ArkMusic ambience` 会提示）。
+
+## 项目识别：`<leader>B*` 到底作用在哪个项目
+
+`<leader>Bb/Br/Bt/Bc`、`<leader>Bw/BW`、`<leader>dR`、实时测试都依赖「当前项目」的判断。
+规则（`arkvim/project.lua`）：
+
+1. **以当前文件所在目录为准**，不是以 nvim 的 cwd 为准。
+   （以前用 cwd 找 git 根，在 `~/.config/nvim` 里打开别的项目的文件时会把项目认错，
+   于是 `<leader>Bt` 要么提示「不支持当前项目类型」，要么干脆没反应。）
+2. 项目根取 **git 仓库根**；如果 git 根上没有构建清单（marker），
+   就用**离文件最近的子项目**（monorepo 的 `packages/web` 这类）。
+   多模块 Gradle/Maven 因此会正确地在仓库根跑（`./gradlew`、`./mvnw`）。
+3. 没有 git 时用最近的 marker 目录；什么 marker 都没有 → 提示「未检测到项目」。
+4. `<leader>B*` 键位**始终注册**，按了没反应会明确告诉你原因（项目类型不支持 / 未检测到项目）。
 
 ## 调试 / 实时测试（含框架项目）
 

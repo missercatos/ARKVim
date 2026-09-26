@@ -16,7 +16,7 @@ local MARKERS = {
     local f = io.open(root .. "/pom.xml", "r")
     if not f then return false end
     local c = f:read("*a"); f:close()
-    return c:find("spring%-boot", 1, true) ~= nil
+    return c:find("spring-boot", 1, true) ~= nil
   end},
   { file = "pom.xml",         kind = "java",    always = true },
   { file = "build.gradle.kts", kind = "gradle_kotlin", always = true },
@@ -130,23 +130,67 @@ function M.detect(start)
 end
 
 --- Get current project (cached)
-local _cache_root = nil
-local _cache_proj = nil
+---@param child string
+---@param parent string
+local function inside(child, parent)
+  return child == parent or child:sub(1, #parent + 1) == parent .. "/"
+end
+
+local _cache = { start = nil, root = nil, proj = false } -- proj=false 表示“探过了，这里没有项目”
 
 function M.current()
   local file = vim.fn.expand("%:p")
-  local s = file ~= "" and vim.fn.fnamemodify(file, ":h") or vim.fn.getcwd()
-  local ok, out = pcall(vim.fn.systemlist, { "git", "rev-parse", "--show-toplevel" })
-  local root = (ok and #out > 0 and vim.v.shell_error == 0) and out[1]
-  if not root then root = s end
+  -- 以“当前文件所在目录”为准；没有真实文件才退回 nvim 的 cwd。
+  -- git 必须在文件所在目录里问（git -C），不能用 cwd ——
+  -- 否则在 ~/.config/nvim 里打开别的项目的文件时，会把项目认成当前仓库。
+  local start = (file ~= "" and file:sub(1, 1) == "/")
+      and vim.fn.fnamemodify(file, ":h")
+    or vim.fn.getcwd()
 
-  if root == _cache_root and _cache_proj then
-    return _cache_proj
+  -- 快路径 1：同一个目录，直接复用
+  if start == _cache.start then
+    return _cache.proj or nil
+  end
+  -- 快路径 2：还在上次算出的项目里 → 免掉 git 进程 + marker 遍历
+  if _cache.proj and inside(start, _cache.root) then
+    _cache.start = start
+    return _cache.proj
   end
 
-  _cache_root = root
-  _cache_proj = M.detect(root)
-  return _cache_proj
+  -- git 仓库根
+  local git_root
+  local ok, out = pcall(vim.fn.systemlist, { "git", "-C", start, "rev-parse", "--show-toplevel" })
+  if ok and vim.v.shell_error == 0 and out and #out > 0 then
+    local top = vim.trim(out[1])
+    if top ~= "" then git_root = top end
+  end
+
+  -- 离当前文件最近的 marker（子项目）
+  local nearest = M.detect(start)
+
+  local root, proj
+  if git_root then
+    local at_root = M.detect(git_root)
+    if at_root and at_root.root == git_root then
+      -- git 根本身就是项目：多模块 Gradle/Maven、cargo workspace 的构建入口都在根上
+      root, proj = git_root, at_root
+    elseif nearest and nearest.root ~= git_root and inside(nearest.root, git_root) then
+      -- git 根上没有 marker，但文件所在的子目录是一个项目（比如 monorepo 的 packages/x）
+      root, proj = nearest.root, nearest
+    else
+      root, proj = git_root, at_root
+    end
+  elseif nearest then
+    root, proj = nearest.root, nearest
+  else
+    root = start
+    proj = M.detect(start)
+  end
+
+  _cache.start = start
+  _cache.root = root
+  _cache.proj = proj or false
+  return proj
 end
 
 return M
