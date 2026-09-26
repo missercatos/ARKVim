@@ -74,6 +74,8 @@ vim.api.nvim_create_autocmd("User", {
     require("arkvim.media").setup()
     -- 音频：:ArkMusic 开关（mpv / 本地播放器 / 环境音 / 音效）
     require("arkvim.music").setup()
+    -- 调试：<leader>dR 调试整个项目 / :ArkDebug（补 Kotlin 等缺失的 DAP 配置）
+    require("arkvim.dap").setup()
   end,
 })
 

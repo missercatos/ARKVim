@@ -9,6 +9,57 @@ local M = {}
 
 local function has(cmd) return vim.fn.executable(cmd) == 1 end
 
+--- 猜 Gradle 该跑哪个 task（Spring→bootRun / Android→installDebug / 其它→run）
+--- 注意：很多项目用 convention plugin + version catalog，写的是
+--- `alias(libs.plugins.android.application)` / `id("maafw.android.application")`，
+--- 所以不能只搜 "com.android.application"。
+local function detect_gradle_task(root)
+  local candidates = { root .. "/build.gradle.kts", root .. "/build.gradle" }
+  for _, sub in ipairs({ "app", "android", "server", "core", "application" }) do
+    candidates[#candidates + 1] = root .. "/" .. sub .. "/build.gradle.kts"
+    candidates[#candidates + 1] = root .. "/" .. sub .. "/build.gradle"
+  end
+  candidates[#candidates + 1] = root .. "/gradle/libs.versions.toml"
+  candidates[#candidates + 1] = root .. "/settings.gradle.kts"
+  candidates[#candidates + 1] = root .. "/settings.gradle"
+
+  local parts = {}
+  for _, f in ipairs(candidates) do
+    if vim.fn.filereadable(f) == 1 then
+      parts[#parts + 1] = table.concat(vim.fn.readfile(f), "\n")
+    end
+  end
+  local all = table.concat(parts, "\n")
+
+  if all:find("org%.springframework%.boot") or all:find("spring%-boot") then
+    return "bootRun"
+  end
+
+  -- Android 判据：AndroidManifest / convention plugin / version catalog 信号
+  local manifests = {
+    root .. "/app/src/main/AndroidManifest.xml",
+    root .. "/android/src/main/AndroidManifest.xml",
+    root .. "/src/main/AndroidManifest.xml",
+  }
+  local is_android = false
+  for _, m in ipairs(manifests) do
+    if vim.fn.filereadable(m) == 1 then
+      is_android = true
+    end
+  end
+  if not is_android then
+    is_android = all:find("com%.android") ~= nil
+      or all:find("android%.application") ~= nil
+      or all:find("android%.library") ~= nil
+      or all:find("libs%.plugins%.android") ~= nil
+      or all:find("androidx") ~= nil
+  end
+  if is_android then
+    return "installDebug"
+  end
+  return "run"
+end
+
 local function commands(proj)
   local k = proj.kind or proj.lang
   local root = proj.root
@@ -19,6 +70,9 @@ local function commands(proj)
     cmds.run    = "cd " .. root .. " && mvn -q spring-boot:run"
     cmds.test   = "cd " .. root .. " && mvn -q test"
     cmds.clean  = "cd " .. root .. " && mvn -q clean"
+    -- 带 JDWP 调试端口启动，之后可用 :ArkDebug attach 连接
+    cmds.debug  = 'cd ' .. root .. ' && mvn spring-boot:run ' ..
+      '-Dspring-boot.run.jvmArguments="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"'
     if has("java") then
       local jars = vim.fn.glob(root .. "/target/*.jar", false, true)
       if #jars > 0 then
@@ -27,16 +81,27 @@ local function commands(proj)
     end
   elseif k == "java" then
     if has("javac") and has("java") then
+      local maincls = "$(find src -name '*.java' | head -1 | sed 's|src/||;s|\\.java||;s|/|.|g')"
       cmds.build = "cd " .. root .. " && find src -name '*.java' | xargs javac -d out"
-      cmds.run   = "cd " .. root .. " && java -cp out $(find src -name '*.java' | head -1 | sed 's|src/||;s|\\.java||;s|/|.|g')"
+      cmds.run   = "cd " .. root .. " && java -cp out " .. maincls
       cmds.clean = "cd " .. root .. " && rm -rf out"
+      cmds.debug = "cd " .. root ..
+        " && java -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005 -cp out " .. maincls
     end
   elseif k == "gradle" or k == "gradle_kotlin" then
     local gw = has("./gradlew") and "./gradlew" or "gradle"
+    local gradle_task = detect_gradle_task(root)
     cmds.build  = "cd " .. root .. " && " .. gw .. " build -x test"
-    cmds.run    = "cd " .. root .. " && " .. gw .. " bootRun"
+    cmds.run    = "cd " .. root .. " && " .. gw .. " " .. gradle_task
     cmds.test   = "cd " .. root .. " && " .. gw .. " test"
     cmds.clean  = "cd " .. root .. " && " .. gw .. " clean"
+    -- Spring/普通 JVM：--debug-jvm 会挂在 5005 等调试器（用 :ArkDebug attach 连）
+    -- Android：installDebug 装到设备，之后用 adb/Android Studio 调试
+    if gradle_task == "installDebug" then
+      cmds.debug = "cd " .. root .. " && " .. gw .. " installDebug"
+    else
+      cmds.debug = "cd " .. root .. " && " .. gw .. " " .. gradle_task .. " --debug-jvm"
+    end
   elseif k == "rust" then
     if has("cargo") then
       cmds.build  = "cd " .. root .. " && cargo build"
@@ -50,6 +115,7 @@ local function commands(proj)
       cmds.run    = "cd " .. root .. " && go run ."
       cmds.test   = "cd " .. root .. " && go test ./..."
       cmds.clean  = "cd " .. root .. " && go clean"
+      cmds.debug  = "cd " .. root .. " && dlv debug ."
     end
   elseif k == "node" then
     if has("npm") then
@@ -61,8 +127,10 @@ local function commands(proj)
           if pkg.scripts.build then cmds.build = "cd " .. root .. " && npm run build" end
           if pkg.scripts.dev then
             cmds.run = "cd " .. root .. " && npm run dev"
+            cmds.debug = "cd " .. root .. " && NODE_OPTIONS=--inspect npm run dev"
           elseif pkg.scripts.start then
             cmds.run = "cd " .. root .. " && npm run start"
+            cmds.debug = "cd " .. root .. " && NODE_OPTIONS=--inspect npm run start"
           end
           if pkg.scripts.test then cmds.test = "cd " .. root .. " && npm test" end
         end
@@ -243,6 +311,19 @@ function M.run(action)
   end
   local cmds = commands(proj)
   run_in_terminal(cmds[action])
+end
+
+--- 调试启动命令（按项目类型）
+function M.debug_command(proj)
+  if not proj then
+    return nil
+  end
+  return commands(proj).debug
+end
+
+--- 在底部终端里执行命令（给 dap.lua 用）
+function M.run_command(cmd)
+  run_in_terminal(cmd)
 end
 
 -- ---------------------------------------------------------------------------

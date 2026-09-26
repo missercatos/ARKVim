@@ -4,12 +4,34 @@
 local specs = {}
 
 -- 实时测试：neotest watch（保存/改动时自动重跑，需要 LSP 附加）
+-- neotest 找不到适配器/位置时，自动退回「保存触发测试」（arkvim.build 的 watch）
 table.insert(specs, {
   "nvim-neotest/neotest",
   keys = {
-    { "<leader>tw", function() require("neotest").watch.toggle(vim.fn.expand("%")) end, desc = "Watch File (实时测试)" },
-    { "<leader>tW", function() require("neotest").watch.toggle(vim.fn.getcwd()) end, desc = "Watch Project (实时测试)" },
+    {
+      "<leader>tw",
+      function()
+        if not require("arkvim.test").watch("file") then
+          vim.notify("neotest 无法 watch 本文件（无适配器/非测试文件/LSP 未附加）\n→ 退回「保存自动测试」(<leader>BW)",
+            vim.log.levels.WARN, { title = "ARKVIM" })
+          require("arkvim.build").toggle_watch("test")
+        end
+      end,
+      desc = "Watch File (实时测试)",
+    },
+    {
+      "<leader>tW",
+      function()
+        if not require("arkvim.test").watch("project") then
+          vim.notify("neotest 无法 watch 本项目（无适配器/LSP 未附加）\n→ 退回「保存自动测试」(<leader>BW)",
+            vim.log.levels.WARN, { title = "ARKVIM" })
+          require("arkvim.build").toggle_watch("test")
+        end
+      end,
+      desc = "Watch Project (实时测试)",
+    },
     { "<leader>tq", function() require("neotest").watch.stop() end, desc = "Stop All Watches" },
+    { "<leader>ti", function() require("arkvim.test").status() end, desc = "实时测试: 诊断" },
   },
 })
 

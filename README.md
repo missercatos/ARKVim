@@ -94,7 +94,9 @@ C、C++、Rust、Python、Java、Kotlin、Go、JavaScript、TypeScript、HTML、
 | `<space>Bb/Br/Bt/Bc` | 构建 / 运行 / 测试 / 清理当前项目 |
 | `<space>Bw` / `<space>BW` | watch 模式：保存文件自动重跑 build / test（再按一次关闭） |
 | `<space>Bo` / `<space>BR` | overseer 任务面板 / 运行任务 |
-| `<space>tw` / `<space>tW` / `<space>tq` | 实时测试：watch 当前文件 / 整个项目 / 停止全部 |
+| `<space>tw` / `<space>tW` / `<space>tq` | 实时测试：watch 当前文件 / 整个项目 / 停止全部（neotest 不可用时自动退回保存触发） |
+| `<space>ti` | 实时测试诊断（项目/类型/LSP/适配器状态） |
+| `<space>dR` 或 `:ArkDebug` | **调试整个项目**（有 DAP 配置就弹选择；没有就按项目类型以调试模式启动） |
 | `<space>us` 或 `:ArkTrail` | 光标拖影开关（见下方「光标拖影」） |
 | `<space>uM` | **媒体文件：渲染 ↔ 源码（字节）切换**（图片/视频/GIF/PDF） |
 | `<space>Mm` / `<space>Me` | 音乐：mpv 播放器组件 / echo.nvim 音效试听 |
@@ -236,6 +238,54 @@ vim.g.arkvim_native_cursor_trail = false  -- 反过来：强制启用插件
   仅类 Unix 有 `build.sh`，**Windows 上跳过构建，该功能不可用**。
 - **echo.nvim**：需要它自己的 Rust 二进制（`melMass/echo.nvim` 的 README 说明 0.0.1 的 lazy 安装还拿不到二进制）；仅在 Windows / macOS 默认启用。
 - **ambience.nvim**：GitHub 上找不到该插件，暂未接入（`:ArkMusic ambience` 会提示）。
+
+## 调试 / 实时测试（含框架项目）
+
+LazyVim 只为 java/go/python/ruby/rust/c/cpp/js/ts 提供了 DAP 配置，
+**Kotlin、Android、Gradle 这类框架项目 `<leader>dc` 会直接报 "No configurations found"**。
+这里补了一层：
+
+### `<leader>dR` / `:ArkDebug`　调试整个项目
+
+| 情况 | 行为 |
+|---|---|
+| 当前文件类型**有** DAP 配置（Java/Python/Go/Rust/Node…） | 走 `dap.continue()`，弹出配置选择（等同 `<leader>dc`） |
+| **没有**配置（Kotlin/Android/Dart…） | 按项目类型用「带调试端口启动」的命令在终端里跑 |
+
+`arkvim/dap.lua` 会：
+- 把 LazyVim 的 **java 配置复制给 kotlin**（同一个 JVM 调试器）
+- 补一个通用 **`Attach to JVM (port 5005)`** 配置，配 `:ArkDebug attach` 连接
+
+按项目类型的内置调试启动（`arkvim/build.lua`）：
+
+| 项目 | 调试启动命令 |
+|---|---|
+| Maven / Spring Boot | `mvn spring-boot:run -Dspring-boot.run.jvmArguments="-agentlib:jdwp=…address=*:5005"` |
+| Gradle / Spring | `./gradlew bootRun --debug-jvm`（挂在 5005 等 attach） |
+| Gradle / Android | `./gradlew installDebug`（装到设备） |
+| Gradle / 普通 JVM | `./gradlew run --debug-jvm` |
+| Java CLI | `java -agentlib:jdwp=…,suspend=y,address=5005 -cp out <Main>` |
+| Go / Node / Python | `dlv debug .` / `NODE_OPTIONS=--inspect npm run dev` / debugpy |
+
+> Gradle task 是自动识别的（读根目录 + `app/` + version catalog），
+> 因为很多项目用 `alias(libs.plugins.android.application)` 或 convention plugin，
+> 不能只搜 `com.android.application`。
+
+### 实时测试
+
+常用三个键：
+
+| 键 | 行为 |
+|---|---|
+| `<space>tw` | neotest watch 当前文件 |
+| `<space>tW` | neotest watch 整个项目 |
+| `<space>tq` | 停止所有 watch |
+| `<space>ti` | 诊断：项目 / 文件类型 / LSP / 适配器 / 能否 watch |
+
+**neotest 的 watch 需要两件事**：该语言有 neotest adapter + 有 LSP client 附加。
+框架项目常常不满足（Kotlin/Android 没有 neotest adapter），这时会**自动退回**
+`arkvim.build` 的「保存触发测试」（和 `<space>BW` 同一套，不依赖 LSP 和 adapter），
+并给一条提示说明为什么退回。
 
 ## 其它新增插件
 
