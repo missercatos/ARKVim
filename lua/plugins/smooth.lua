@@ -36,17 +36,17 @@ return {
       transparent_bg_fallback_color = terminal.background() or "#303030",
       never_draw_over_target = true,  -- 不覆盖目标字符（修复字符瞬失）
       -- 头部速度：越大越快，0=不动，1=瞬移
-      stiffness = 0.75,               -- default 0.6
+      stiffness = 0.8,               -- default 0.6
       -- 尾部速度：越小尾巴拖得越长
-      trailing_stiffness = 0.35,      -- default 0.45
-      max_length = 15,                -- default 25（拖影更小）
+      trailing_stiffness = 0.4,      -- default 0.45
+      max_length = 14,                -- default 25（拖影更小）
       damping = 0.85,                 -- default 0.85
       anticipation = 0.1,             -- default 0.2 (减少反向回摆)
       distance_stop_animating = 0.8,  -- default 0.1 (更早停住)
-      time_interval = 10,             -- default 17ms (更高帧率)
+      time_interval = 8,             -- default 17ms (更高帧率)
       delay_event_to_smear = 1,
       delay_after_key = 5,
-      particles_enabled = true,       -- 粒子特效
+      particles_enabled = false,      -- 粒子特效（konsole 下只要拖影，不要粒子）
       -- 粒子更明显：更多、存活更久、更分散
       particle_max_num = 200,         -- default 100
       particles_per_second = 400,     -- default 200
