@@ -53,3 +53,11 @@ if vim.g.tactical then
     end,
   })
 end
+
+-- Light/Dark 跟随系统模式（深色=当前配色；浅色=白色化背景+深色字体）
+vim.api.nvim_create_autocmd("VimEnter", {
+  once = true,
+  callback = function()
+    require("config.theme-mode").apply()
+  end,
+})

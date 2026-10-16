@@ -1,6 +1,6 @@
 -- arkvim/scaffold/systems.lua — 系统级语言 / 少见语言模板
--- Zig / Nim / Crystal / D / Haskell / OCaml / Lisp / Scheme / Racket /
--- Erlang / Elixir / Julia / Swift / C# / Clojure / Scala
+-- Zig / Nim / Crystal / D / Haskell / OCaml / Lisp / Emacs Lisp / Scheme /
+-- Racket / Erlang / Elixir / Julia / Swift / C# / Clojure / Scala
 local util = require("arkvim.scaffold.util")
 
 local M = {}
@@ -157,6 +157,105 @@ gen.commonlisp = function(target, name)
     [".gitignore"] = "*.fasl\n",
   })
   return "Common Lisp (SBCL) 项目已生成"
+end
+
+-- ===== Emacs Lisp 库 =====
+gen.elisp = function(target, name)
+  local t = util.project_tokens(name)
+  util.write_tree(target, {
+    [t.kebab .. ".el"] = util.fill([=[;;; {{kebab}}.el --- {{NAME}}  -*- lexical-binding: t; -*-
+
+;; Author: you
+;; Version: 0.1.0
+;; Keywords: tools
+;; URL: https://example.com/{{kebab}}
+
+;;; Commentary:
+
+;; {{NAME}} —— 一个 Emacs Lisp 库。
+;; 在 Emacs 里 (require '{{kebab}})，或脚本模式 emacs --script {{kebab}}.el。
+
+;;; Code:
+
+(defgroup {{kebab}} nil
+  "{{NAME}}."
+  :group 'tools)
+
+;;;###autoload
+(defun {{kebab}}-hello (name)
+  "向 NAME 打个招呼。"
+  (interactive "s你的名字: ")
+  (let ((greeting (format "Hello from {{NAME}}, %s!" name)))
+    (when (called-interactively-p 'interactive)
+      (message "%s" greeting))
+    greeting))
+
+(provide '{{kebab}})
+;;; {{kebab}}.el ends here
+]=], t),
+
+    ["test/" .. t.kebab .. "-test.el"] = util.fill([=[;;; {{kebab}}-test.el --- {{NAME}} 测试  -*- lexical-binding: t; -*-
+
+;;; Commentary:
+
+;; ERT 测试：emacs -Q --batch -L . -L test -l test/{{kebab}}-test.el \
+;;   -f ert-run-tests-batch-and-exit
+
+;;; Code:
+
+(require 'ert)
+(require '{{kebab}})
+
+(ert-deftest {{kebab}}-hello-test ()
+  (should (equal ({{kebab}}-hello "World") "Hello from {{NAME}}, World!")))
+
+(provide '{{kebab}}-test)
+;;; {{kebab}}-test.el ends here
+]=], t),
+
+    ["Makefile"] = util.fill([=[EMACS ?= emacs
+NAME  := {{kebab}}
+SRC   := $(wildcard *.el)
+TEST  := test/$(NAME)-test.el
+
+.PHONY: build run test clean
+
+build:
+	$(EMACS) -Q --batch -L . -f batch-byte-compile $(SRC)
+
+run:
+	$(EMACS) -Q --batch -L . -l $(NAME).el \
+		--eval '(message "%s" ($(NAME)-hello "World"))'
+
+test:
+	$(EMACS) -Q --batch -L . -L test -l $(TEST) -f ert-run-tests-batch-and-exit
+
+clean:
+	rm -f *.elc test/*.elc
+]=], t),
+
+    ["README.md"] = util.fill([=[# {{NAME}}
+
+Emacs Lisp 库。
+
+## 使用
+
+```elisp
+(require '{{kebab}})
+({{kebab}}-hello "World")
+```
+
+## 开发
+
+```bash
+make build   # 字节编译
+make test    # ERT 测试
+```
+]=], t),
+
+    [".gitignore"] = "*.elc\n*.eln\neln-cache/\ndist/\n.eask/\n*~\n#*#\n",
+  })
+  return "Emacs Lisp 库已生成（make build / make test）"
 end
 
 -- ===== Scheme (Guile) =====
@@ -433,6 +532,9 @@ M.frameworks = {
     requires = { bins = { "dune", "ocaml" }, pacman = { "dune", "ocaml" } } },
   { label = "Common Lisp (SBCL)", lang = "lisp", gen = gen.commonlisp, main = "main.lisp",
     requires = { bins = { "sbcl" }, pacman = { "sbcl" } } },
+  { label = "Emacs Lisp 库", lang = "elisp", gen = gen.elisp,
+    main = function(n) return util.slug(n) .. ".el" end,
+    requires = { bins = { "emacs" }, pacman = { "emacs" }, note = "库骨架，含 ERT 测试与 Makefile" } },
   { label = "Scheme (Guile)", lang = "scheme", gen = gen.scheme, main = "main.scm",
     requires = { bins = { "guile" }, pacman = { "guile" } } },
   { label = "Racket", lang = "racket", gen = gen.racket, main = "main.rkt",

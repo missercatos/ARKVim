@@ -51,10 +51,10 @@ local LANG_ORDER = {
   go = 7, rust = 8, zig = 9, nim = 10, crystal = 11, d = 12,
   python = 13, ruby = 14, php = 15, perl = 16, lua = 17,
   javascript = 18, typescript = 19,
-  haskell = 20, ocaml = 21, lisp = 22, scheme = 23, racket = 24,
-  erlang = 25, elixir = 26, clojure = 27, julia = 28, swift = 29,
-  dart = 30, bash = 31, nix = 32, solidity = 33,
-  css = 34, html = 35, devops = 36,
+  haskell = 20, ocaml = 21, lisp = 22, scheme = 23, elisp = 24, racket = 25,
+  erlang = 26, elixir = 27, clojure = 28, julia = 29, swift = 30,
+  dart = 31, bash = 32, nix = 33, solidity = 34,
+  css = 35, html = 36, devops = 37,
 }
 
 local function sort_frameworks()
@@ -281,13 +281,19 @@ function M.generate(framework, name, base)
     return false
   end
 
+  local main = framework.main
+  if type(main) == "function" then
+    main = main(name)
+  end
+  main = main or ""
+
   M.save_metadata(target, {
     lang = framework.lang,
     label = framework.label,
-    main = framework.main or "",
+    main = main,
     workspace = base,
   })
-  vim.g.arkvim_project_main = framework.main or ""
+  vim.g.arkvim_project_main = main
 
   -- 关键：不 cd 进新项目。
   -- 这样可以在同一个工作区里平级创建多个框架（不会套娃），

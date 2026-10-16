@@ -54,6 +54,8 @@ table.insert(spec, { import = "plugins" })
 -- 早期 setup：依赖首个 buffer 的 BufEnter/BufReadPost 检测，必须尽早注册
 require("arkvim.watcher").setup()
 require("arkvim.hints").setup() -- 内部会 require arkvim.project + arkvim.capabilities
+-- elisp：注册 .el 文件类型 + 补全（需在首个 buffer 检测文件类型前）
+require("arkvim.elisp").setup()
 
 -- 仅注册键位的模块延迟到 VeryLazy，省启动时间（VeryLazy 紧随启动后触发）
 vim.api.nvim_create_autocmd("User", {

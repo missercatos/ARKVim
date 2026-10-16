@@ -231,6 +231,13 @@ local function compile_cmd(file, dir)
     end
     return "echo '错误: 未找到 C# 编译器 (mcs)'"
   end
+  if ext == "el" then
+    if vim.fn.executable("emacs") == 1 then
+      -- Emacs Lisp：用 `emacs --script` 直接加载并执行（等价于 batch 脚本模式）
+      return string.format("emacs --script %s", vim.fn.shellescape(file))
+    end
+    return "echo '错误: 未找到 Emacs (emacs)'"
+  end
   if ext == "html" then
     require("arkvim.os").open(file)
     vim.notify("浏览器中打开: " .. file)
