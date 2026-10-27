@@ -20,6 +20,13 @@ if vim.env.ARKVIM_NO_MASON ~= "1" then
   end
 end
 
+-- 用户级工具（rust-analyzer 等）目录：从桌面/GUI 启动 nvim 时 fish 的 PATH 不一定继承
+local local_bin = vim.fn.expand("~/.local/bin")
+local sep = vim.fn.has("win32") == 1 and ";" or ":"
+if vim.fn.isdirectory(local_bin) == 1 and not (vim.env.PATH or ""):find(local_bin, 1, true) then
+  vim.env.PATH = local_bin .. sep .. (vim.env.PATH or "")
+end
+
 -- 战术终端（foot/alacritty）：准星光标拖影 + 快速响应 + 原生极简 UI
 if vim.g.tactical then
   -- 光标拖影：cursorline(行) + cursorcolumn(列) 十字准星，配绿底高亮

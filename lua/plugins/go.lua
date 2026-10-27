@@ -24,6 +24,11 @@ return {
       linters_by_ft = {
         go = { "golangcilint" },
       },
+      linters = {
+        golangcilint = {
+          ignore_exitcode = true,
+        },
+      },
     },
   },
 }
