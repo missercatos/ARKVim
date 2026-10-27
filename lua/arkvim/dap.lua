@@ -22,6 +22,11 @@ end
 
 --- 把 java 的 dap 配置同步给 kotlin，并补一个通用 JVM attach 配置
 function M.sync_configs()
+  -- 仓颉：lldb-dap（打开 .cj 时也会由 FileType autocmd 注册）
+  pcall(function()
+    require("arkvim.cangjie").setup_dap()
+  end)
+
   local ok, dap = pcall(require, "dap")
   if not ok then
     return false

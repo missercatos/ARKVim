@@ -63,6 +63,7 @@ vim.api.nvim_create_autocmd("User", {
   once = true,
   callback = function()
     require("arkvim.build").setup()
+    require("arkvim.cangjie").setup()
     require("arkvim.gitgraph").setup()
     require("arkvim.preview").setup()
     require("arkvim.modules").setup()
