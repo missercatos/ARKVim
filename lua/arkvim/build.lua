@@ -9,6 +9,19 @@ local M = {}
 
 local function has(cmd) return vim.fn.executable(cmd) == 1 end
 
+--- 仓颉工具：优先 PATH，其次 ~/.local/share/cangjie/wrappers
+--- （从桌面/GUI 启动 nvim 时可能没有 fish 的 PATH）
+local function cangjie_bin(name)
+  if has(name) then
+    return name
+  end
+  local p = vim.fn.expand("~/.local/share/cangjie/wrappers/" .. name)
+  if has(p) then
+    return p
+  end
+  return nil
+end
+
 --- 猜 Gradle 该跑哪个 task（Spring→bootRun / Android→installDebug / 其它→run）
 --- 注意：很多项目用 convention plugin + version catalog，写的是
 --- `alias(libs.plugins.android.application)` / `id("maafw.android.application")`，
@@ -257,6 +270,15 @@ local function commands(proj)
     cmds.run   = "cd " .. root .. " && dotnet run"
     cmds.test  = "cd " .. root .. " && dotnet test"
     cmds.clean = "cd " .. root .. " && dotnet clean"
+  elseif k == "cangjie" then
+    local cjpm = cangjie_bin("cjpm")
+    if cjpm then
+      local cj = vim.fn.shellescape(cjpm)
+      cmds.build = "cd " .. root .. " && " .. cj .. " build"
+      cmds.run   = "cd " .. root .. " && " .. cj .. " run"
+      cmds.test  = "cd " .. root .. " && " .. cj .. " test"
+      cmds.clean = "cd " .. root .. " && " .. cj .. " clean"
+    end
   elseif k == "clojure" then
     cmds.run   = "cd " .. root .. " && clj -M:run"
     cmds.test  = "cd " .. root .. " && clj -X:test"

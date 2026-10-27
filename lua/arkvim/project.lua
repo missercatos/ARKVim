@@ -65,6 +65,7 @@ local MARKERS = {
   { file = "scrapy.cfg",      kind = "python",   always = true },
   { file = "src-tauri/tauri.conf.json", kind = "tauri", always = true },
   { file = "conf.lua",        kind = "love",     always = true },
+  { file = "cjpm.toml",       kind = "cangjie",  always = true },
 }
 
 local LANG_MAP = {
@@ -78,6 +79,7 @@ local LANG_MAP = {
   erlang = "erlang", elixir = "elixir", julia = "julia", swift = "swift",
   csharp = "csharp", clojure = "clojure", scala = "scala",
   solidity = "solidity", nix = "nix", tauri = "rust", love = "lua",
+  cangjie = "cangjie",
 }
 
 --- Walk up from `start` looking for marker files

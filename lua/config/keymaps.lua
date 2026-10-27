@@ -169,6 +169,17 @@ map("n", "<leader>fT", function()
   open_external_terminal(vim.fn.expand("%:p:h"))
 end, { desc = "Terminal (external)" })
 
+local function cangjie_bin(name)
+  if vim.fn.executable(name) == 1 then
+    return name
+  end
+  local p = vim.fn.expand("~/.local/share/cangjie/wrappers/" .. name)
+  if vim.fn.executable(p) == 1 then
+    return p
+  end
+  return nil
+end
+
 local function compile_cmd(file, dir)
   local base = vim.fn.expand("%:t:r")
   local ext = string.lower(vim.fn.expand("%:e"))
@@ -237,6 +248,25 @@ local function compile_cmd(file, dir)
       return string.format("emacs --script %s", vim.fn.shellescape(file))
     end
     return "echo '错误: 未找到 Emacs (emacs)'"
+  end
+  if ext == "cj" then
+    -- 仓颉：在 cjpm 项目里整项目编译运行；单文件用 cjc 编译后直接执行
+    local cjpm = cangjie_bin("cjpm")
+    local cjc = cangjie_bin("cjc")
+    if cjpm then
+      local marker = vim.fs.find("cjpm.toml", { upward = true, path = dir })[1]
+      if marker then
+        local root = vim.fs.dirname(marker)
+        return string.format("cd %s && %s run", vim.fn.shellescape(root), vim.fn.shellescape(cjpm))
+      end
+    end
+    if cjc then
+      local out = base .. sys.exe_suffix()
+      local run = sys.is_win and (".\\" .. out) or ("./" .. base)
+      return string.format("%s --set-runtime-rpath %s -o %s && %s",
+        vim.fn.shellescape(cjc), vim.fn.shellescape(file), vim.fn.shellescape(out), vim.fn.shellescape(run))
+    end
+    return "echo '错误: 未找到仓颉工具链 (cjpm/cjc)，请先安装 Cangjie SDK'"
   end
   if ext == "html" then
     require("arkvim.os").open(file)
