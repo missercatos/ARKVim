@@ -25,11 +25,6 @@ return {
       formatters_by_ft = {
         kotlin = { "ktlint" },
       },
-      format_on_save = function(bufnr)
-        if vim.bo[bufnr].filetype == "kotlin" then
-          return { timeout_ms = 5000, lsp_fallback = true }
-        end
-      end,
     },
   },
   {

@@ -25,11 +25,6 @@ return {
       formatters_by_ft = {
         dart = { "dart_format" },
       },
-      format_on_save = function(bufnr)
-        if vim.bo[bufnr].filetype == "dart" then
-          return { timeout_ms = 5000, lsp_fallback = true }
-        end
-      end,
     },
   },
 }

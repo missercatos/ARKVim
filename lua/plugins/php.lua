@@ -18,11 +18,6 @@ return {
       formatters_by_ft = {
         php = { "php-cs-fixer" },
       },
-      format_on_save = function(bufnr)
-        if vim.bo[bufnr].filetype == "php" then
-          return { timeout_ms = 5000, lsp_fallback = true }
-        end
-      end,
     },
   },
   {

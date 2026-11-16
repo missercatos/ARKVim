@@ -48,11 +48,6 @@ return {
       formatters_by_ft = {
         python = { "ruff_format", "ruff_fix", "ruff_organize_imports" },
       },
-      format_on_save = function(bufnr)
-        if vim.bo[bufnr].filetype == "python" then
-          return { timeout_ms = 5000, lsp_fallback = true }
-        end
-      end,
     },
   },
   {

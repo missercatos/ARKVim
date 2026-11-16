@@ -17,12 +17,6 @@ return {
         c = { "clang-format" },
         cpp = { "clang-format" },
       },
-      format_on_save = function(bufnr)
-        local ft = vim.bo[bufnr].filetype
-        if ft == "c" or ft == "cpp" then
-          return { timeout_ms = 5000, lsp_fallback = true }
-        end
-      end,
     },
   },
   {

@@ -127,38 +127,6 @@ return {
           wo = { winblend = 0 },
         },
       })
-
-      vim.api.nvim_create_autocmd("User", {
-        pattern = "SnacksDashboardOpened",
-        once = true,
-        callback = function()
-          vim.defer_fn(function()
-            local file = vim.fn.stdpath("config") .. "/lua/arkvim/"
-            if vim.fn.filereadable(file) == 1 then
-              pcall(function()
-                Snacks.image.placement.new(vim.api.nvim_get_current_buf(), file, {
-                  auto_resize = true,
-                  max_width = 45,
-                  max_height = 15,
-                  on_update_pre = function(p)
-                    local img = Snacks.image.util.pixels_to_cells(Snacks.image.util.dim(file))
-                    p.opts.pos = {
-                      13,
-                      math.max(64, math.floor((vim.o.columns - img.width) / 2) - 5),
-                    }
-                    local ok = vim.o.columns >= 130 and vim.o.lines >= 8 + img.height + 3
-                    if ok then
-                      p:show()
-                    else
-                      p:hide()
-                    end
-                  end,
-                })
-              end)
-            end
-          end, 200)
-        end,
-      })
     end,
   },
 }

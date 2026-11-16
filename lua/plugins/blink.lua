@@ -10,8 +10,8 @@ return {
         -- 补全项详情：自动显示文档（函数/类型说明）
         documentation = {
           auto_show = true,
-          auto_show_delay_ms = 150,
-          update_delay_ms = 30,
+          auto_show_delay_ms = 200,
+          update_delay_ms = 50,
           treesitter_highlighting = true,
           window = { border = "rounded", max_height = 20 },
         },
