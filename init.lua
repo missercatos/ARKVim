@@ -30,3 +30,6 @@ end
 
 -- bootstrap lazy.nvim, LazyVim and your plugins
 require("config.lazy")
+
+-- fcitx5 与编辑模式联动：normal 模式英文直通，避免中文状态吃掉 <Space> leader
+require("config.ime").setup()

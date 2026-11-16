@@ -56,6 +56,8 @@ require("arkvim.watcher").setup()
 require("arkvim.hints").setup() -- 内部会 require arkvim.project + arkvim.capabilities
 -- elisp：注册 .el 文件类型 + 补全（需在首个 buffer 检测文件类型前）
 require("arkvim.elisp").setup()
+-- 匹配括号上的“第二光标”块（只注册 autocmd，几乎无启动开销）
+require("arkvim.bracket_cursor").setup()
 
 -- 仅注册键位的模块延迟到 VeryLazy，省启动时间（VeryLazy 紧随启动后触发）
 vim.api.nvim_create_autocmd("User", {
