@@ -6,6 +6,22 @@ return {
     "saghen/blink.cmp",
     optional = true,
     opts = {
+      sources = {
+        providers = {
+          lsp = {
+            -- clangd 会在 label 前加 include 指示符（" " 或 "•"），
+            -- 菜单里显示成 " NEWOEDER" 很怪，这里去掉；filterText 仍然正确。
+            transform_items = function(_, items)
+              for _, item in ipairs(items) do
+                if item.client_name == "clangd" and type(item.label) == "string" then
+                  item.label = item.label:gsub("^[ •]", "")
+                end
+              end
+              return items
+            end,
+          },
+        },
+      },
       completion = {
         -- 补全项详情：自动显示文档（函数/类型说明）
         documentation = {
