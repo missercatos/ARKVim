@@ -30,14 +30,8 @@ end
 if vim.fn.executable("node") == 1 then
   table.insert(spec, { import = "lazyvim.plugins.extras.lang.typescript" })
 end
-if vim.fn.executable("java") == 1 then
-  table.insert(spec, { import = "lazyvim.plugins.extras.lang.java" })
-end
 if vim.fn.executable("go") == 1 then
   table.insert(spec, { import = "lazyvim.plugins.extras.lang.go" })
-end
-if vim.fn.executable("ruby") == 1 then
-  table.insert(spec, { import = "lazyvim.plugins.extras.lang.ruby" })
 end
 if vim.fn.executable("docker") == 1 or vim.fn.executable("docker-compose") == 1 then
   table.insert(spec, { import = "lazyvim.plugins.extras.lang.docker" })

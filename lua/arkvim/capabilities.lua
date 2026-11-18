@@ -12,8 +12,8 @@ end
 
 -- ---------------------------------------------------------------------------
 -- A. auto-load on project detection (lightweight, no external binary required)
--- NOTE: Go/Python/Ruby neotest adapters are already provided by LazyVim's
--- lang extras. Node/Java adapters are registered via plugins/neotest.lua.
+-- NOTE: Go/Python neotest adapters are already provided by LazyVim's
+-- lang extras. The Node adapter is registered via plugins/neotest.lua.
 -- Do NOT call neotest.setup() here — it would clobber LazyVim's config.
 -- ---------------------------------------------------------------------------
 
@@ -34,41 +34,6 @@ add({
 -- ---------------------------------------------------------------------------
 
 add({
-  id = "flutter-device",
-  label = "Flutter 设备/热重载",
-  kinds = { "flutter" },
-  auto = true, -- 检测到 Flutter 项目就加载工具链 + 注册 <leader>Xm
-  plugins = { "nvim-flutter/flutter-tools.nvim" },
-  requires = {
-    bins = { "flutter" },
-    pacman = { "flutter" },
-    note = "Flutter SDK 未安装，flutter-tools 不会加载",
-  },
-  keys = {
-    { "<leader>Xm", function() require("arkvim.mobile").flutter_menu() end, desc = "Flutter 设备" },
-  },
-  hint = "按 <leader>Xm 启动设备/热重载",
-  load = function()
-    -- flutter-tools 的 setup 由 plugins/mobile.lua 负责，这里不要再 setup 以免覆盖
-  end,
-})
-
-add({
-  id = "android-dev",
-  label = "Android 开发",
-  kinds = { "gradle", "gradle_kotlin", "spring" },
-  auto = false,
-  plugins = {},
-  keys = {
-    { "<leader>Xa", function() require("arkvim.mobile").android_menu() end, desc = "Android 设备" },
-  },
-  hint = "检测到 Android/Gradle 项目 — 按 <leader>Xa 构建/安装/镜像",
-  load = function()
-    -- already loaded
-  end,
-})
-
-add({
   id = "jupyter",
   label = "Jupyter 内联执行",
   kinds = { "jupyter", "python" },
@@ -79,8 +44,8 @@ add({
     note = "molten 需要 pynvim: pip install --user pynvim",
   },
   keys = {
-    { "<leader>ji", function() require("arkvim.mobile").molten_init() end, desc = "Jupyter 初始化" },
-    { "<leader>jl", function() require("arkvim.mobile").sniprun_run() end, desc = "行内执行" },
+    { "<leader>ji", function() require("arkvim.notebook").molten_init() end, desc = "Jupyter 初始化" },
+    { "<leader>jl", function() require("arkvim.notebook").sniprun_run() end, desc = "行内执行" },
   },
   hint = "按 <leader>ji 初始化 molten · <leader>jl 行内执行",
   load = function()
@@ -112,7 +77,7 @@ add({
 add({
   id = "http-client",
   label = "HTTP 客户端",
-  kinds = { "node", "go", "spring", "gradle", "gradle_kotlin", "php", "python" },
+  kinds = { "node", "go", "python" },
   auto = false,
   plugins = { "mistweaverco/kulala.nvim" },
   requires = { bins = { "curl" }, pacman = { "curl" } },
@@ -136,7 +101,7 @@ add({
 add({
   id = "remote-dev",
   label = "远程开发",
-  kinds = { "go", "rust", "python", "node", "java", "spring" },
+  kinds = { "go", "rust", "python", "node" },
   auto = false,
   plugins = { "amitds1997/remote-nvim.nvim" },
   requires = { bins = { "ssh" }, pacman = { "openssh" } },
@@ -152,7 +117,7 @@ add({
 add({
   id = "octo-review",
   label = "GitHub PR Review",
-  kinds = { "go", "rust", "python", "node", "java", "spring", "dart", "flutter", "php" },
+  kinds = { "go", "rust", "python", "node" },
   auto = false,
   plugins = { "pwntester/octo.nvim" },
   requires = { bins = { "gh" }, pacman = { "github-cli" } },
@@ -201,7 +166,7 @@ end
 local _notified = {}
 
 --- 检查 cap.requires；返回 true=满足
---- requires = { bins = { "flutter" }, pacman = { "flutter" }, note = "额外说明" }
+--- requires = { bins = { "node" }, pacman = { "nodejs" }, note = "额外说明" }
 local function check_requires(cap, quiet)
   local req = cap.requires
   if not req or not req.bins or #req.bins == 0 then
