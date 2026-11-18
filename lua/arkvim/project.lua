@@ -55,8 +55,6 @@ local MARKERS = {
   { file = "mix.exs",         kind = "elixir",   always = true },
   { file = "Project.toml",    kind = "julia",    always = true },
   { file = "Package.swift",   kind = "swift",    always = true },
-  { glob = "*.csproj",        kind = "csharp",   always = true },
-  { glob = "*.sln",           kind = "csharp",   always = true },
   { file = "deps.edn",        kind = "clojure",  always = true },
   { file = "project.clj",     kind = "clojure",  always = true },
   { file = "build.sbt",       kind = "scala",    always = true },
@@ -77,7 +75,7 @@ local LANG_MAP = {
   zig = "zig", nim = "nim", crystal = "crystal", d = "d",
   haskell = "haskell", ocaml = "ocaml", lisp = "lisp", racket = "racket",
   erlang = "erlang", elixir = "elixir", julia = "julia", swift = "swift",
-  csharp = "csharp", clojure = "clojure", scala = "scala",
+  clojure = "clojure", scala = "scala",
   solidity = "solidity", nix = "nix", tauri = "rust", love = "lua",
   cangjie = "cangjie",
 }

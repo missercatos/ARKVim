@@ -47,7 +47,7 @@ local SEARCH_HEIGHT = 1
 local ns = vim.api.nvim_create_namespace("arkvim_picker")
 
 local LANG_ORDER = {
-  java = 1, kotlin = 2, scala = 3, c = 4, cpp = 5, csharp = 6,
+  java = 1, kotlin = 2, scala = 3, c = 4, cpp = 5,
   go = 7, rust = 8, cangjie = 8.5, zig = 9, nim = 10, crystal = 11, d = 12,
   python = 13, ruby = 14, php = 15, perl = 16, lua = 17,
   javascript = 18, typescript = 19,

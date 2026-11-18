@@ -454,34 +454,6 @@ let package = Package(
   return "Swift Package 已生成"
 end
 
--- ===== C# / .NET =====
-gen.dotnet = function(target, name)
-  local t = util.project_tokens(name)
-  if util.executable("dotnet") then
-    util.mkdir_p(target)
-    vim.fn.system({ "dotnet", "new", "console", "-o", target, "-n", t.Pascal })
-    if vim.v.shell_error == 0 then
-      return ".NET 控制台项目已生成"
-    end
-  end
-  util.write_tree(target, {
-    [t.kebab .. ".csproj"] = util.fill([[<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <RootNamespace>{{Pascal}}</RootNamespace>
-  </PropertyGroup>
-</Project>
-]], t),
-    ["Program.cs"] = util.fill('Console.WriteLine("Hello from {{NAME}}!");\n', t),
-    [".gitignore"] = "bin/\nobj/\n",
-    ["README.md"] = util.fill("# {{NAME}}\n\n```bash\ndotnet run\n```\n", t),
-  })
-  return "C# (.NET) 离线骨架已生成"
-end
-
 -- ===== Clojure =====
 gen.clojure = function(target, name)
   local t = util.project_tokens(name)
@@ -549,8 +521,6 @@ M.frameworks = {
     requires = { bins = { "julia" }, pacman = { "julia" } } },
   { label = "Swift Package", lang = "swift", gen = gen.swift, main = "Sources",
     requires = { bins = { "swift" }, pacman = { "swift" } } },
-  { label = "C# / .NET 控制台", lang = "csharp", gen = gen.dotnet, main = "Program.cs",
-    requires = { bins = { "dotnet" }, pacman = { "dotnet-sdk" } } },
   { label = "Clojure (deps.edn)", lang = "clojure", gen = gen.clojure, main = "",
     requires = { bins = { "clj", "clojure" }, pacman = { "clojure" } } },
   { label = "Scala (sbt)", lang = "scala", gen = gen.scala, main = "src/main/scala/Main.scala",

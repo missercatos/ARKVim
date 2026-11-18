@@ -1,5 +1,5 @@
 -- arkvim/modules.lua — multi-module workspace detection & picker
--- Detects workspace roots (npm/pnpm/yarn, Cargo, Go, Maven, Gradle, CMake, Nx, Turborepo, .sln)
+-- Detects workspace roots (npm/pnpm/yarn, Cargo, Go, Maven, Gradle, CMake, Nx, Turborepo)
 -- Lists modules in a Snacks picker; select to cd + detect project.
 
 local M = {}
@@ -33,8 +33,6 @@ local MARKERS = {
     local c = f:read("*a"); f:close()
     return c:find("<modules>") ~= nil
   end},
-  -- .NET
-  { file = "*.sln",               kind = "dotnet", glob = true },
 }
 
 --- Parse workspace to find sub-modules
@@ -112,21 +110,6 @@ local function parse_modules(root, kind)
         if vim.fn.isdirectory(full) == 1 then
           local name = vim.fn.fnamemodify(full, ":t")
           modules[#modules + 1] = { name = name, path = full, kind = "java" }
-        end
-      end
-    end
-  elseif kind == "dotnet" then
-    local sln = vim.fn.glob(root .. "/*.sln", false, true)[1]
-    if sln then
-      local f = io.open(sln, "r")
-      if f then
-        local c = f:read("*a"); f:close()
-        for proj_path in c:gmatch('Project%([^"]+%)%s*=%s*"([^"]+)"') do
-          local full = root .. "/" .. proj_path
-          if vim.fn.filereadable(full) == 1 then
-            local name = vim.fn.fnamemodify(full, ":t:r")
-            modules[#modules + 1] = { name = name, path = vim.fn.fnamemodify(full, ":h"), kind = "csharp" }
-          end
         end
       end
     end

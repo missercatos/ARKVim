@@ -265,11 +265,6 @@ local function commands(proj)
     cmds.run   = "cd " .. root .. " && swift run"
     cmds.test  = "cd " .. root .. " && swift test"
     cmds.clean = "cd " .. root .. " && swift package clean"
-  elseif k == "csharp" then
-    cmds.build = "cd " .. root .. " && dotnet build"
-    cmds.run   = "cd " .. root .. " && dotnet run"
-    cmds.test  = "cd " .. root .. " && dotnet test"
-    cmds.clean = "cd " .. root .. " && dotnet clean"
   elseif k == "cangjie" then
     local cjpm = cangjie_bin("cjpm")
     if cjpm then
